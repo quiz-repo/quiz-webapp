@@ -14,11 +14,12 @@ import {
   arrayUnion,
   getDoc,
 } from "firebase/firestore";
-import { db, setDocByFirebase } from "@/lib/Firebase";
+import { db, setDocByFirebase, auth, signOut } from "@/lib/Firebase";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "../components/modals/ConfirmModal";
+import Cookies from "js-cookie";
+import { toast } from "react-toastify";
 
-// TypeScript interfaces
 interface Test {
   id: string;
   title: string;
@@ -103,7 +104,26 @@ const AdminPanel = () => {
 
   const confirmLogout = () => {
     setIsModalVisible(false);
-    router.push("/homes");
+    handleLogout();
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoading(true);
+      localStorage.removeItem("token");
+      localStorage.removeItem("isAdmin");
+      sessionStorage.clear();
+      Cookies.remove("token");
+      await signOut(auth);
+      toast.success("Logout successful");
+      router.replace("/homes");
+      
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to logout");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const cancelLogout = () => setIsModalVisible(false);
@@ -111,6 +131,7 @@ const AdminPanel = () => {
   const onClose = () => {
     setShowAddTest(false);
   };
+
   const loadTests = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -126,6 +147,7 @@ const AdminPanel = () => {
       setLoading(false);
     }
   };
+
   const loadQuestions = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -141,6 +163,7 @@ const AdminPanel = () => {
       setLoading(false);
     }
   };
+
   const handleDeleteTest = async (testId: string): Promise<void> => {
     setLoading(true);
     try {
@@ -168,9 +191,9 @@ const AdminPanel = () => {
       setLoading(false);
     }
   };
+
   const handleAddQuestion = async (): Promise<void> => {
     if (!newQuestion.question.trim() || !selectedTest) return;
-    // const questionId = crypto.randomUUID();
     const questionId = uuidv4();
     setLoading(true);
     try {
@@ -228,6 +251,7 @@ const AdminPanel = () => {
   const handleEditQuestion = (question: Question): void => {
     setEditingQuestion({ ...question });
   };
+
   const handleSaveQuestion = async (): Promise<void> => {
     if (!editingQuestion) return;
 
@@ -269,81 +293,39 @@ const AdminPanel = () => {
     }
   };
 
-  // Delete question from Firebase
-  // const handleDeleteQuestion = async (questionId: string): Promise<void> => {
-  //   if (!selectedTest) return;
+  const handleDeleteQuestion = async (questionId: string): Promise<void> => {
+    if (!selectedTest || !Array.isArray(selectedTest.questions)) return;
 
-  //   setLoading(true);
-  //   try {
-  //     const updatedTestQuestions = selectedTest.questions.filter(
-  //       (question) => question.id !== questionId
-  //     );
+    setLoading(true);
+    try {
+      const updatedTestQuestions = selectedTest.questions.filter(
+        (question) => question.id !== questionId
+      );
 
-  //     const testRef = doc(db, "tests", selectedTest.id);
-  //     await updateDoc(testRef, {
-  //       questions: updatedTestQuestions,
-  //     });
+      const testRef = doc(db, "tests", selectedTest.id);
+      await updateDoc(testRef, {
+        questions: updatedTestQuestions,
+      });
 
-  //     // Update state
-  //     setSelectedTest((prev) =>
-  //       prev ? { ...prev, questions: updatedTestQuestions } : null
-  //     );
+      setSelectedTest((prev) =>
+        prev ? { ...prev, questions: updatedTestQuestions } : null
+      );
 
-  //     setQuestions((prevQuestions) =>
-  //       prevQuestions.map((test) =>
-  //         test.id === selectedTest.id
-  //           ? {
-  //               ...test,
-  //               questions: test.questions.filter(
-  //                 (q: any) => q.id !== questionId
-  //               ),
-  //             }
-  //           : test
-  //       )
-  //     );
+      setQuestions((prevTests) =>
+        prevTests.map((test: any) =>
+          test.id === selectedTest.id
+            ? { ...test, questions: updatedTestQuestions }
+            : test
+        )
+      );
 
-  //     console.log("Question deleted successfully!");
-  //   } catch (error: any) {
-  //     console.error("Error deleting question:", error.message || error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-const handleDeleteQuestion = async (questionId: string): Promise<void> => {
-  if (!selectedTest || !Array.isArray(selectedTest.questions)) return;
-
-  setLoading(true);
-  try {
-    const updatedTestQuestions = selectedTest.questions.filter(
-      (question) => question.id !== questionId
-    );
-
-    const testRef = doc(db, "tests", selectedTest.id);
-    await updateDoc(testRef, {
-      questions: updatedTestQuestions,
-    });
-
-    // Update local selected test state
-    setSelectedTest((prev) =>
-      prev ? { ...prev, questions: updatedTestQuestions } : null
-    );
-
-    // Update the global tests state (assuming it's an array of tests)
-    setQuestions((prevTests) =>
-      prevTests.map((test: any) =>
-        test.id === selectedTest.id
-          ? { ...test, questions: updatedTestQuestions }
-          : test
-      )
-    );
-
-    console.log("Question deleted successfully!");
-  } catch (error: any) {
-    console.error("Error deleting question:", error.message || error);
-  } finally {
-    setLoading(false);
-  }
-};
+      console.log("Question deleted successfully!");
+    } catch (error: any) {
+      console.error("Error deleting question:", error.message || error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredQuestions: Question[] = Array.isArray(selectedTest?.questions)
     ? selectedTest.questions
@@ -387,7 +369,6 @@ const handleDeleteQuestion = async (questionId: string): Promise<void> => {
         instructions: newTest.instructions.filter((i) => i.trim() !== ""),
         created: new Date().toISOString().split("T")[0],
       };
-
 
       const docId = await setDocByFirebase(testData);
       const newTestWithId: Test = {
@@ -476,10 +457,10 @@ const handleDeleteQuestion = async (questionId: string): Promise<void> => {
                   <Plus className="w-5 h-5 mr-2" />
                   Add Test
                 </button>
-
                 <button
                   onClick={() => setIsModalVisible(true)}
-                  className="bg-red-500 px-6 py-3 cursor-pointer min-w-[100px] font-semibold flex items-center justify-center hover:bg-red-600 transition-all text-white shadow-lg rounded"
+                  disabled={loading}
+                  className="bg-red-500 px-6 py-3 cursor-pointer min-w-[100px] font-semibold flex items-center justify-center hover:bg-red-600 transition-all text-white shadow-lg rounded disabled:opacity-50"
                 >
                   <LogOutIcon className="mr-2" />
                   Logout
@@ -593,7 +574,6 @@ const handleDeleteQuestion = async (questionId: string): Promise<void> => {
 
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {filteredQuestions.map((question, index) => {
-                      console.log(question, "filteredQuestions");
                       return (
                         <div
                           key={question.id}

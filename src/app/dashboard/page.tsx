@@ -112,122 +112,120 @@ export default function TestDashboard() {
     }
   };
 
-//   const handleSubmitTest = (): void => {
-//     if (!selectedTest) return;
-//     let score = 0;
+  //   const handleSubmitTest = (): void => {
+  //     if (!selectedTest) return;
+  //     let score = 0;
 
-//     selectedTest.questions.forEach((question) => {
-//       const questionId = String(question.id);
-//       const userAnswer = answers[questionId];
+  //     selectedTest.questions.forEach((question) => {
+  //       const questionId = String(question.id);
+  //       const userAnswer = answers[questionId];
 
-//       console.log(
-//         "Checking:",
-//         questionId,
-//         "UserAnswer:",
-//         userAnswer,
-//         "Correct:",
-//         question.correctAnswer
-//       );
+  //       console.log(
+  //         "Checking:",
+  //         questionId,
+  //         "UserAnswer:",
+  //         userAnswer,
+  //         "Correct:",
+  //         question.correctAnswer
+  //       );
 
-//       // const isCorrect =
-//       //   typeof userAnswer !== "undefined" &&
-//       //   userAnswer === question.correctAnswer;
-//       const isCorrect =
-//         typeof userAnswer !== "undefined" &&
-//         String(userAnswer) === String(question.correctAnswer);
+  //       // const isCorrect =
+  //       //   typeof userAnswer !== "undefined" &&
+  //       //   userAnswer === question.correctAnswer;
+  //       const isCorrect =
+  //         typeof userAnswer !== "undefined" &&
+  //         String(userAnswer) === String(question.correctAnswer);
 
-//       if (isCorrect) {
-//         score++;
-//       }
-//     });
+  //       if (isCorrect) {
+  //         score++;
+  //       }
+  //     });
 
-//     const timeTakenInSeconds = selectedTest.duration * 60 - timeRemaining;
-//     const minutes = Math.floor(timeTakenInSeconds / 60);
-//     const seconds = timeTakenInSeconds % 60;
-//     const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
-//       .toString()
-//       .padStart(2, "0")}`;
+  //     const timeTakenInSeconds = selectedTest.duration * 60 - timeRemaining;
+  //     const minutes = Math.floor(timeTakenInSeconds / 60);
+  //     const seconds = timeTakenInSeconds % 60;
+  //     const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
+  //       .toString()
+  //       .padStart(2, "0")}`;
 
-//     // const newResult: TestResult = {
-//     //   score,
-//     //   timeTaken,
-//     //   testId: selectedTest.id,
-//     //   dateCompleted: new Date().toLocaleDateString(),
-//     // };
+  //     // const newResult: TestResult = {
+  //     //   score,
+  //     //   timeTaken,
+  //     //   testId: selectedTest.id,
+  //     //   dateCompleted: new Date().toLocaleDateString(),
+  //     // };
 
-//     const newResult: TestResult = {
-//   score,
-//   timeTaken,
-//   testId: selectedTest.id,
-//   dateCompleted: new Date().toLocaleDateString(),
-//   userId:auth.currentUser?.uid || "guest", 
-//   userAnswers, 
-//   totalQuestions: selectedTest.questions.length,
-//   percentage: Math.round((score / selectedTest.questions.length) * 100),
-// };
+  //     const newResult: TestResult = {
+  //   score,
+  //   timeTaken,
+  //   testId: selectedTest.id,
+  //   dateCompleted: new Date().toLocaleDateString(),
+  //   userId:auth.currentUser?.uid || "guest",
+  //   userAnswers,
+  //   totalQuestions: selectedTest.questions.length,
+  //   percentage: Math.round((score / selectedTest.questions.length) * 100),
+  // };
 
+  //     console.log("Newresultbeingsaved", newResult);
 
-//     console.log("Newresultbeingsaved", newResult);
+  //     setTestResults((prev) => [...prev, newResult]);
+  //     setCurrentResult(newResult);
+  //     setTestStarted(false);
+  //     setCurrentView("results");
+  //   };
 
-//     setTestResults((prev) => [...prev, newResult]);
-//     setCurrentResult(newResult);
-//     setTestStarted(false);
-//     setCurrentView("results");
-//   };
+  const handleSubmitTest = (): void => {
+    if (!selectedTest) return;
 
+    let score = 0;
 
-const handleSubmitTest = (): void => {
-  if (!selectedTest) return;
+    selectedTest.questions.forEach((question) => {
+      const questionId = String(question.id);
+      const userAnswer = answers[questionId];
 
-  let score = 0;
+      const isCorrect =
+        typeof userAnswer !== "undefined" &&
+        String(userAnswer) === String(question.correctAnswer);
 
-  selectedTest.questions.forEach((question) => {
-    const questionId = String(question.id);
-    const userAnswer = answers[questionId];
+      if (isCorrect) {
+        score++;
+      }
+    });
 
-    const isCorrect =
-      typeof userAnswer !== "undefined" &&
-      String(userAnswer) === String(question.correctAnswer);
+    const timeTakenInSeconds = selectedTest.duration * 30 - timeRemaining;
+    const minutes = Math.floor(timeTakenInSeconds / 60);
+    const seconds = timeTakenInSeconds % 60;
+    const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
 
-    if (isCorrect) {
-      score++;
-    }
-  });
+    const userId = auth.currentUser?.uid || "guest";
 
-  const timeTakenInSeconds = selectedTest.duration * 60 - timeRemaining;
-  const minutes = Math.floor(timeTakenInSeconds / 60);
-  const seconds = timeTakenInSeconds % 60;
-  const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
-    .toString()
-    .padStart(2, "0")}`;
+    const userAnswers = Object.entries(answers).map(
+      ([questionId, selectedOption]) => ({
+        questionId: Number(questionId),
+        selectedOption,
+      })
+    );
 
-  const userId = auth.currentUser?.uid || "guest";
+    const newResult: TestResult = {
+      score,
+      timeTaken,
+      testId: selectedTest.id,
+      dateCompleted: new Date().toLocaleDateString(),
+      userId,
+      userAnswers: Object.values(answers),
+      totalQuestions: selectedTest.questions.length,
+      percentage: Math.round((score / selectedTest.questions.length) * 100),
+    };
 
-  const userAnswers = Object.entries(answers).map(
-    ([questionId, selectedOption]) => ({
-      questionId: Number(questionId),
-      selectedOption,
-    })
-  );
+    console.log("New result being saved", newResult);
 
-  const newResult: TestResult = {
-    score,
-    timeTaken,
-    testId: selectedTest.id,
-    dateCompleted: new Date().toLocaleDateString(),
-    userId,
-   userAnswers: Object.values(answers),
-    totalQuestions: selectedTest.questions.length,
-    percentage: Math.round((score / selectedTest.questions.length) * 100),
+    setTestResults((prev) => [...prev, newResult]);
+    setCurrentResult(newResult);
+    setTestStarted(false);
+    setCurrentView("results");
   };
-
-  console.log("New result being saved", newResult);
-
-  setTestResults((prev) => [...prev, newResult]);
-  setCurrentResult(newResult);
-  setTestStarted(false);
-  setCurrentView("results");
-};
 
   const handleLogout = (): void => setIsLogoutModalVisible(true);
   const cancelLogout = (): void => setIsLogoutModalVisible(false);
@@ -287,7 +285,7 @@ const handleSubmitTest = (): void => {
     if (!selectedTest) return;
     // console.log(selectedTest, "selectedTestdsfgdg");
     setCurrentView("test");
-    setTimeRemaining(selectedTest.duration * 60);
+    setTimeRemaining(30 * 60);
     setTestStarted(true);
   };
 
@@ -324,11 +322,8 @@ const handleSubmitTest = (): void => {
     console.log(testResult, "selectedTest");
   };
 
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
-    
-
       <header className="bg-black/20 backdrop-blur-sm border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -367,7 +362,7 @@ const handleSubmitTest = (): void => {
                 <div className="w-full sm:w-auto">
                   <button
                     onClick={handleLogout}
-                    className="flex items-center justify-center text-white hover:text-red-400 bg-white/10 hover:bg-red-500/20 px-4 py-2 rounded-lg transition-all duration-300 w-full sm:w-auto"
+                    className="flex items-center cursor-pointer justify-center text-white hover:text-red-400 bg-white/10 hover:bg-red-500/20 px-4 py-2 rounded-lg transition-all duration-300 w-full sm:w-auto"
                   >
                     <LogOutIcon className="w-5 h-5 mr-2" />
                     Logout
@@ -424,8 +419,6 @@ const handleSubmitTest = (): void => {
           />
         )}
       </main>
-
-      {/* Logout Modal */}
       <ConfirmModal
         title="Confirm Logout"
         message="Are you sure you want to logout?"
@@ -433,11 +426,9 @@ const handleSubmitTest = (): void => {
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
       />
-
-      {/* Navigation Modal */}
       <ConfirmModal
-        title="Leave Current View"
-        message="Are you sure you want to return to the dashboard? Any unsaved progress may be lost."
+        title="End Test"
+        message="Are you sure you want to end the test? Any unsaved progress will be lost."
         visible={isNavigationModalVisible}
         onConfirm={confirmNavigation}
         onCancel={cancelNavigation}

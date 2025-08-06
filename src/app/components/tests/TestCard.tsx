@@ -17,9 +17,9 @@ export const TestCard = ({ test, onClick }: TestCardProps) => {
   //   setIsModalVisible(false);
   //   router.push("/dashboard");
   // };
-  const handleClick =()=>{
-    router.push('/dashboard')
-  }
+  const handleClick = () => {
+    router.push("/dashboard");
+  };
 
   // const cancelLogout = () => setIsModalVisible(false);
   return (
@@ -36,11 +36,18 @@ export const TestCard = ({ test, onClick }: TestCardProps) => {
           <div className="flex flex-wrap gap-4 text-sm">
             <span className="text-purple-300">
               <Clock className="w-4 h-4 inline mr-1" />
-              {test.duration} minutes
+              {/* {test.duration} minutes */}
+              {30}minutes
             </span>
             <span className="text-green-300">
               <BookOpen className="w-4 h-4 inline mr-1" />
-              {test.questions.length} questions
+              {/* {test.questions.length} questions */}
+              {
+                test.questions
+                  .sort(() => 0.5 - Math.random()) // randomly shuffle
+                  .slice(0, 50).length
+              }{" "}
+              questions
             </span>
             <span className="text-yellow-300">Level: {test.difficulty}</span>
             <span className="text-blue-300">Subject: {test.subject}</span>

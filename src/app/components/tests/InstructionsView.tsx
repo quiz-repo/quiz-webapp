@@ -18,11 +18,13 @@ export const InstructionsView = ({
       <div className="flex flex-col sm:flex-row justify-center items-start sm:items-center gap-4 sm:gap-8 text-blue-200 text-sm sm:text-base">
         <div className="flex items-center">
           <Clock className="w-5 h-5 mr-2" />
-          {test.duration} minutes
+          {/* {test.duration} minutes */}
+          {30} minutes
         </div>
         <div className="flex items-center">
           <BookOpen className="w-5 h-5 mr-2" />
-          {test.questions.length} questions
+          {/* {test.questions.length} questions */}
+           {50} questions
         </div>
         <div className="flex items-center">
           <CheckCircle className="w-5 h-5 mr-2" />

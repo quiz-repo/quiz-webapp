@@ -40,18 +40,21 @@ export const DashboardView = ({
         />
         <StatsCard
           title="Total Questions"
-          value={tests.reduce((sum, test) => sum + (test?.questions?.length || 0), 0)}
-          icon={<CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-green-500" />}
+          // value={tests.reduce((sum, test) => sum + (test?.questions?.length || 0), 0)}
+          value={tests[0]?.questions?.length || 0}
+          icon={
+            <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-green-500" />
+          }
         />
         <StatsCard
           title="Avg Duration"
-          value={
-            tests.length > 0
-              ? `${Math.round(
-                  tests.reduce((sum, test) => sum + (test?.duration || 0), 0) / tests.length
-                )}m`
-              : "0m"
-          }
+          value={`${30} m`}
+          // tests.length > 0
+          //   ? `${Math.round(
+          //       tests.reduce((sum, test) => sum + (test?.duration || 0), 0) / tests.length
+          //     )}m`
+          //   : "0m"
+          // }
           icon={<Clock className="w-7 h-7 sm:w-8 sm:h-8 text-purple-500" />}
         />
         <StatsCard
@@ -84,7 +87,7 @@ export const DashboardView = ({
           <div className="flex flex-col gap-4 w-full">
             {testResults.map((result, index) => {
               const test = tests.find((t) => t.id === result.testId);
-              console.log(result.testId,"jhniuh")
+              console.log(result.testId, "jhniuh");
               if (!test) return null;
 
               return (
@@ -102,7 +105,8 @@ export const DashboardView = ({
                     </p>
                     <p className="text-green-300 text-sm mt-1">
                       Score: {result.score}/{test.questions.length} (
-                      {Math.round((result.score / test.questions.length) * 100)}%)
+                      {Math.round((result.score / test.questions.length) * 100)}
+                      %)
                     </p>
                   </div>
                   <button className="w-full sm:w-auto flex justify-center items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
@@ -118,4 +122,3 @@ export const DashboardView = ({
     </div>
   );
 };
-

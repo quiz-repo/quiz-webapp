@@ -1,77 +1,3 @@
-// // src/lib/firebase.ts
-// // import { database } from "firebase-admin";
-// import { initializeApp } from "firebase/app";
-// import { getAuth } from "firebase/auth";
-// import { getFirestore, collection, getDocs, addDoc } from "firebase/firestore";
-
-// const firebaseConfig = {
-//   apiKey: "AIzaSyDpnBusw0FWGY0qqQd-rtuljkC_2XlEH10",
-//   authDomain: "newproject-f0d20.firebaseapp.com",
-//   projectId: "newproject-f0d20",
-//   storageBucket: "newproject-f0d20.appspot.com",
-//   messagingSenderId: "863958675589",
-//   appId: "1:863958675589:web:4f6f20e0ea62c8003c39ec",
-//   database:
-//     "https://newproject-f0d20-default-rtdb.asia-southeast1.firebasedatabase.app/",
-// };
-
-// // const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-// const app = initializeApp(firebaseConfig);
-
-// const auth = getAuth(app);
-// const db = getFirestore(app);
-
-// async function getDocByFirebase() {
-//   try {
-//     const querySnapshot = await getDocs(collection(db, "citites"));
-//     const cities = querySnapshot.docs.map((doc) => ({
-//       id: doc.id,
-//       ...doc.data(),
-//     }));
-//     console.log(cities, "0000");
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-// // async function setDocByFirebase(data: any) {
-// //   console.log("ssssssssssssssssssss", data);
-// //   try {
-// //     const querySnapshot: any = await addDoc(collection(db, "qeq"), {
-// //       stringExample: "Hello world!",
-// //       booleanExample: true,
-// //       numberExample: 3.14159265,
-// //     });
-// //     const cities = querySnapshot.docs.map((doc: any) => ({
-// //       id: doc.id,
-// //       ...doc.data(),
-// //     }));
-// //     console.log(cities, "0000");
-// //   } catch (error) {
-// //     console.log(error);
-// //   }
-// // }
-// async function setDocByFirebase(data: any) {
-//   console.log("Data being added:", data);
-//   try {
-//     const docRef = await addDoc(collection(db, "qeq"), {
-//       stringExample: "Hello world!",
-//       booleanExample: true,
-//       numberExample: 3.14159265,
-//     });
-
-//     console.log("Document written with ID:", docRef.id);
-//   } catch (error) {
-//     console.log("Error adding document:", error);
-//   }
-// }
-
-// // await addDoc(collection(db, "tests"), {
-// //   title: "JavaScript Fundamentals",
-// //   description: "Test description",
-// // });
-
-// export { auth, db, getDocByFirebase, setDocByFirebase };
 
 import { initializeApp } from "firebase/app";
 import { getAuth, signOut } from "firebase/auth";
@@ -97,8 +23,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-
-// ───── Firestore Functions ───────────────────────────────
 
 async function getData() {
   try {
@@ -177,12 +101,11 @@ const fetchTestResult = async (resultId: string): Promise<TestResult> => {
   }
 };
 
-// ───── Exports ───────────────────────────────────────────
 
 export {
   auth,
   db,
-  signOut, // ✅ Export signOut for logout usage
+  signOut, 
   getData as getDocByFirebase,
   addTestDocument as setDocByFirebase,
   getQuestions,
