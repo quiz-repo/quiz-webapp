@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    setLoading(true); 
+    setLoading(true);
 
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       try {
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           const token = await currentUser.getIdToken();
           Cookies.set("token", token, { expires: 1 });
-          localStorage.setItem("token", token); 
+          localStorage.setItem("token", token);
           const isAdmin = currentUser.email === "admin@yopmail.com";
           localStorage.setItem("isAdmin", isAdmin.toString());
         } else {
@@ -68,28 +68,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     throw new Error("Use register page directly");
   };
 
-const logout = async () => {
-  try {
-    setLoading(true);
-    await firebaseSignOut(auth);
+  const logout = async () => {
+    try {
+      setLoading(true);
+      await firebaseSignOut(auth);
 
-    setUser(null);
-    Cookies.remove("token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("isAdmin");
-    localStorage.setItem("sessionExpired", "true");
-    sessionStorage.clear();
+      setUser(null);
+      Cookies.remove("token");
+      localStorage.removeItem("token");
+      localStorage.removeItem("isAdmin");
+      localStorage.setItem("sessionExpired", "true");
+      sessionStorage.clear();
 
-    toast.success("Logout successful");
-    router.replace("/homes");
-  } catch (error) {
-    console.error("Logout error:", error);
-    toast.error("Failed to logout");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      toast.success("Logout successful");
+      router.replace("/homes");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to logout");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout }}>

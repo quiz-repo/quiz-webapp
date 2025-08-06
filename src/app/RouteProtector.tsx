@@ -54,8 +54,6 @@ export function RouteProtector({ children }: { children: ReactNode }) {
         if (sessionExpired) {
           localStorage.removeItem("sessionExpired");
           toast.error("Session expired. Please log in again.");
-        } else {
-          // toast.success("Logout Successfully");
         }
 
         setIsNavigating(true);
@@ -63,6 +61,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
         return;
       }
     }
+
     if (
       pathname.startsWith("/adminPanel") &&
       (!user || !token || user.email !== "admin@yopmail.com" || !isAdmin)
@@ -81,17 +80,16 @@ export function RouteProtector({ children }: { children: ReactNode }) {
       router.replace("/adminPanel");
       return;
     }
-    if (
-      user &&
-      token &&
-      (pathname === "/" || pathname === "/login" || pathname === "/register")
-    ) {
+    const isGoingToPublic = publicRoutes.includes(pathname);
+
+    if (user && token && isGoingToPublic) {
       setIsNavigating(true);
-      if (user.email === "admin@yopmail.com" && isAdmin) {
+      if (isAdmin && user.email === "admin@yopmail.com") {
         router.replace("/adminPanel");
       } else {
         router.replace("/dashboard");
       }
+
       return;
     }
 
