@@ -263,13 +263,13 @@ export default function TestDashboard() {
 
   const confirmLogout = async (): Promise<void> => {
     try {
-      await signOut(auth); // 🔥 Sign out from Firebase
-      setIsLogoutModalVisible(false); // 🔒 Close the modal
-      resetTestState(); // 🔁 Reset test states
-      router.push("/"); // 🏠 Redirect to homepage
+      await signOut(auth); 
+      setIsLogoutModalVisible(false); 
+      resetTestState(); 
+      router.push("/"); 
     } catch (error) {
       console.error("Logout failed:", error);
-      // Optionally show toast or message
+   
     }
   };
 

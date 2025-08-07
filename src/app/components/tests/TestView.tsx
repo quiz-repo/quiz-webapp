@@ -46,7 +46,6 @@ export const TestView = ({
   const progress =
     questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-  // Shuffle array function
   function shuffleArray(array: any[]) {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -56,7 +55,6 @@ export const TestView = ({
     return arr;
   }
 
-  // Fetch questions from Firebase
   const fetchQuestions = async () => {
     if (!test?.id) {
       setIsLoading(false);
@@ -79,7 +77,6 @@ export const TestView = ({
           return;
         }
 
-        // Shuffle all questions and select only 50
         const shuffled = shuffleArray(originalQuestions);
         const selected50Questions = shuffled.slice(0, 50);
 
@@ -103,14 +100,40 @@ export const TestView = ({
     fetchQuestions();
   }, [test?.id]);
 
-  // Handle navigation to specific question
+  // ✅ Enter key support for navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        const currentAnswer = answers[currentQuestion?.id];
+        if (currentAnswer !== undefined) {
+          if (currentQuestionIndex === questions.length - 1) {
+            onSubmitTest();
+          } else {
+            onNextQuestion();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    answers,
+    currentQuestion?.id,
+    currentQuestionIndex,
+    questions.length,
+    onNextQuestion,
+    onSubmitTest,
+  ]);
+
   const handleQuestionSelect = (index: number) => {
     if (index >= 0 && index < questions.length) {
       setCurrentQuestionIndex(index);
     }
   };
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="space-y-6 px-4 sm:px-6 md:px-10">
@@ -123,7 +146,6 @@ export const TestView = ({
     );
   }
 
-  // Show error state if no questions
   if (questions.length === 0) {
     return (
       <div className="space-y-6 px-4 sm:px-6 md:px-10">
@@ -138,7 +160,7 @@ export const TestView = ({
 
   return (
     <div className="space-y-6 px-4 sm:px-6 md:px-10">
-      {/* Header with progress and timer */}
+      {/* Header */}
       <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/20 space-y-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-2 sm:space-y-0 text-white">
@@ -164,12 +186,14 @@ export const TestView = ({
           />
         </div>
       </div>
+
       <QuestionNavigator
         questions={questions}
         currentQuestionIndex={currentQuestionIndex}
         answers={answers}
         onQuestionSelect={handleQuestionSelect}
       />
+
       {currentQuestion && (
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/20 space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
@@ -180,6 +204,7 @@ export const TestView = ({
               {currentQuestion.difficulty || "Medium"}
             </span>
           </div>
+
           <div className="space-y-3">
             {currentQuestion.options.map((option, index) => (
               <label
@@ -217,20 +242,9 @@ export const TestView = ({
               </label>
             ))}
           </div>
-          <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:gap-6 p-6 bg-gradient-to-r from-purple-900/30 to-purple-800/30 backdrop-blur-sm rounded-xl border border-purple-500/20">
-            {/* Progress Section */}
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              {/* Progress Bar */}
-              {/* <div className="w-64 sm:w-48 bg-purple-900/50 rounded-full h-2 border border-purple-500/30">
-                <div
-                  className="bg-gradient-to-r from-cyan-400 to-blue-500 h-2 rounded-full transition-all duration-500 ease-out"
-                  style={{
-                    width: `${(answeredCount / questions.length) * 100}%`,
-                  }}
-                ></div>
-              </div> */}
 
-              {/* Progress Text */}
+          <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:gap-6 p-6 bg-gradient-to-r from-purple-900/30 to-purple-800/30 backdrop-blur-sm rounded-xl border border-purple-500/20">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
               <div className="flex items-center gap-3 text-sm">
                 <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-full border border-blue-400/30">
                   <div className="w-1.5 h-1.5 bg-blue-400 rounded-full"></div>
@@ -250,7 +264,6 @@ export const TestView = ({
               </div>
             </div>
 
-            {/* Action Button */}
             {currentQuestionIndex === questions.length - 1 ? (
               <button
                 onClick={onSubmitTest}
