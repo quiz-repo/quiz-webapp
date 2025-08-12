@@ -188,3 +188,93 @@ body {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   width: 331px !important;
 }
+.logout-confirm-modal .ant-modal-content {
+  background: linear-gradient(
+    135deg,
+    #f9f9fc,
+    #f1f4ff
+  ); /* Soft light gradient */
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.logout-confirm-modal .ant-modal-header {
+  background: transparent;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.logout-modal-title {
+  color: #1f1f1f;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  align-items: center;
+  display: block;
+  position: relative;
+  top: 5px;
+}
+
+.logout-modal-message {
+  color: #4a4a4a;
+  text-align: center;
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+.logout-confirm-modal .ant-btn-primary {
+  background: linear-gradient(90deg, #7b61ff, #4e8cff);
+  border: none;
+  color: #fff;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0 18px;
+  transition: all 0.3s ease;
+}
+
+.logout-confirm-modal .ant-btn-primary:hover {
+  background: linear-gradient(90deg, #4e8cff, #7b61ff);
+}
+
+.logout-confirm-modal .ant-btn-default {
+  background-color: rgba(255, 255, 255, 0.7);
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  padding: 0 18px;
+  transition: all 0.3s ease;
+  justify-content: space-between;
+}
+
+.logout-confirm-modal .ant-btn-default:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+.ant-modal-footer {
+  justify-content: space-between;
+  display: flex;
+  padding: 7px !important;
+}
+.logout-confirm-modal .ant-modal-close {
+    top: -2px;
+    /* left: 9px; */
+    right: 0px;
+}
+
+.logout-confirm-modal .ant-modal-close,
+.logout-confirm-modal .ant-modal-close:hover,
+.logout-confirm-modal .ant-modal-close:focus {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.logout-confirm-modal .ant-modal-close-x {
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: transparent !important;
+}
+
+

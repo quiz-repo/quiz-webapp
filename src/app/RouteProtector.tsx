@@ -38,7 +38,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
       "/forgot-password",
     ];
 
-    const protectedRoutes = ["/dashboard", "/adminPanel"];
+    const protectedRoutes = ["/dashboard", "/adminPanel", "admin-panel"];
 
     const isPublic =
       publicRoutes.includes(pathname) ||
@@ -55,7 +55,6 @@ export function RouteProtector({ children }: { children: ReactNode }) {
           localStorage.removeItem("sessionExpired");
           toast.error("Session expired. Please log in again.");
         }
-
         setIsNavigating(true);
         router.replace("/homes");
         return;
@@ -80,6 +79,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
       router.replace("/adminPanel");
       return;
     }
+
     const isGoingToPublic = publicRoutes.includes(pathname);
 
     if (user && token && isGoingToPublic) {
@@ -89,7 +89,6 @@ export function RouteProtector({ children }: { children: ReactNode }) {
       } else {
         router.replace("/dashboard");
       }
-
       return;
     }
 
@@ -97,9 +96,15 @@ export function RouteProtector({ children }: { children: ReactNode }) {
     setIsAllowed(true);
   }, [pathname, user, loading, router]);
 
+if (
+  !pathname.startsWith("/admin-panel") &&
+  !pathname.startsWith("/adminPanel")
+) {
   if (loading || isNavigating || !isAllowed) {
     return <LoadingSpinner />;
   }
+}
+
 
   return <>{children}</>;
 }

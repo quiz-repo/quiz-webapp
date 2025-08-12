@@ -20,11 +20,11 @@ const OnlineTestLandingPage = () => {
           Take practice tests, track your progress, and improve your performance
           with our smart test platform.
         </p>
-      <Link href="/register">
-  <button className="bg-white cursor-pointer  text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-white/90 transition">
-    Get Started
-  </button>
-</Link>
+        <Link href="/register">
+          <button className="bg-white cursor-pointer  text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-white/90 transition">
+            Get Started
+          </button>
+        </Link>
       </section>
 
       {/* Features Section */}
