@@ -5,12 +5,12 @@
   --foreground: #171717;
 }
 
-@theme inline {
+/* @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
+} */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -24,9 +24,6 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-/* global.css */
-/* Complete Dark Modal Styling */
-/* Complete Dark Modal Styling */
 .custom-dark-modal .ant-modal-content {
   background: linear-gradient(135deg, #1e3a8a 0%, #4c1d95 50%, #312e81 100%);
   color: white;
@@ -256,9 +253,9 @@ body {
   padding: 7px !important;
 }
 .logout-confirm-modal .ant-modal-close {
-    top: -2px;
-    /* left: 9px; */
-    right: 0px;
+  top: -2px;
+  /* left: 9px; */
+  right: 0px;
 }
 
 .logout-confirm-modal .ant-modal-close,
@@ -276,5 +273,45 @@ body {
   align-items: center;
   background: transparent !important;
 }
+.custom-select .ant-select-selector {
+  height: 48px !important;
+  padding: 6px 12px !important;
+  border-radius: 12px !important;
+  border: 1px solid #cbd5e1 !important; /* slate-300 */
+}
 
+.custom-select .ant-select-selection-placeholder {
+  color: #94a3b8 !important; /* placeholder-slate-400 */
+}
 
+.custom-select .ant-select-selector:hover {
+  border-color: #3b82f6 !important; /* dark blue hover */
+}
+
+.custom-select.ant-select-focused .ant-select-selector {
+  border-color: transparent !important;
+  box-shadow: 0 0 0 2px #3b82f6 !important; /* focus:ring-blue-500 */
+}
+.custom-select-advance .ant-select-selector {
+  height: 48px !important;
+  padding: 6px 12px !important;
+  border-radius: 12px !important;
+  border: 1px solid #cbd5e1 !important; /* slate-300 */
+}
+
+.custom-select-advance .ant-select-selection-placeholder {
+  color: #94a3b8 !important; /* placeholder-slate-400 */
+}
+
+.custom-select-advance .ant-select-selector:hover {
+  border-color: #3b82f6 !important; /* dark blue hover */
+}
+
+.custom-select.ant-select-focused .ant-select-selector {
+  border-color: transparent !important;
+  box-shadow: 0 0 0 2px #3b82f6 !important; /* focus:ring-blue-500 */
+}
+/* Light black placeholder for AntD Select */
+.custom-select-advance .ant-select-selection-placeholder {
+  color: #6280 !important; /* Tailwind slate-500 */
+}
