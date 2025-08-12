@@ -1259,7 +1259,7 @@ const AdminPanel = () => {
                     </div>
                   </div>
 
-                  {/* Footer */}
+        
                   <div className="p-4 border-t border-slate-200">
                     <div className="flex space-x-3">
                       <button
