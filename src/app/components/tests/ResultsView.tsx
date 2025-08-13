@@ -20,7 +20,7 @@ export const ResultsView = ({
 
   let performance = "";
   let performanceColor = "";
-  console.log(test);
+  console.log(result);
 
   if (percentage >= 80) {
     performance = "Excellent!";
@@ -35,6 +35,7 @@ export const ResultsView = ({
     performance = "Keep Practicing";
     performanceColor = "text-red-400";
   }
+
 
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">

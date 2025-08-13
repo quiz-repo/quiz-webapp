@@ -30,15 +30,17 @@ export function RouteProtector({ children }: { children: ReactNode }) {
     const token = Cookies.get("token");
     const isAdmin = localStorage.getItem("isAdmin") === "true";
 
+    // Public routes — /admin-panel is only public for NON-logged-in users
     const publicRoutes = [
       "/",
       "/homes",
       "/register",
       "/login",
       "/forgot-password",
+      "/admin-panel", // Admin login page
     ];
 
-    const protectedRoutes = ["/dashboard", "/adminPanel", "admin-panel"];
+    const protectedRoutes = ["/dashboard", "/adminPanel"];
 
     const isPublic =
       publicRoutes.includes(pathname) ||
@@ -48,6 +50,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
       (r) => pathname === r || pathname.startsWith(r + "/")
     );
 
+    // If not logged in → block protected routes
     if (!user || !token) {
       if (isProtected) {
         const sessionExpired = localStorage.getItem("sessionExpired");
@@ -61,28 +64,42 @@ export function RouteProtector({ children }: { children: ReactNode }) {
       }
     }
 
+    // If logged in as admin and trying to access admin login → redirect to adminPanel
     if (
-      pathname.startsWith("/adminPanel") &&
-      (!user || !token || user.email !== "admin@yopmail.com" || !isAdmin)
-    ) {
-      setIsNavigating(true);
-      router.back();
-      return;
-    }
-
-    if (
-      pathname.startsWith("/dashboard") &&
-      user?.email === "admin@yopmail.com" &&
-      isAdmin
+      pathname.startsWith("/admin-panel") &&
+      user &&
+      token &&
+      isAdmin &&
+      user.email === "admin@yopmail.com"
     ) {
       setIsNavigating(true);
       router.replace("/adminPanel");
       return;
     }
 
-    const isGoingToPublic = publicRoutes.includes(pathname);
+    // If trying to open /adminPanel without admin access → redirect out
+    if (
+      pathname.startsWith("/adminPanel") &&
+      (!user || !token || !isAdmin || user.email !== "admin@yopmail.com")
+    ) {
+      setIsNavigating(true);
+      router.replace("/homes");
+      return;
+    }
 
-    if (user && token && isGoingToPublic) {
+    // If admin tries to go to dashboard → send to adminPanel
+    if (
+      pathname.startsWith("/dashboard") &&
+      isAdmin &&
+      user?.email === "admin@yopmail.com"
+    ) {
+      setIsNavigating(true);
+      router.replace("/adminPanel");
+      return;
+    }
+
+    // Redirect logged-in users from public pages to correct dashboard
+    if (user && token && isPublic) {
       setIsNavigating(true);
       if (isAdmin && user.email === "admin@yopmail.com") {
         router.replace("/adminPanel");
@@ -96,15 +113,14 @@ export function RouteProtector({ children }: { children: ReactNode }) {
     setIsAllowed(true);
   }, [pathname, user, loading, router]);
 
-if (
-  !pathname.startsWith("/admin-panel") &&
-  !pathname.startsWith("/adminPanel")
-) {
-  if (loading || isNavigating || !isAllowed) {
-    return <LoadingSpinner />;
+  if (
+    !pathname.startsWith("/admin-panel") &&
+    !pathname.startsWith("/adminPanel")
+  ) {
+    if (loading || isNavigating || !isAllowed) {
+      return <LoadingSpinner />;
+    }
   }
-}
-
 
   return <>{children}</>;
 }

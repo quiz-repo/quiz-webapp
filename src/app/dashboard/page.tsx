@@ -11,7 +11,6 @@ import ConfirmModal from "../components/modals/ConfirmModal";
 import { getDocByFirebase, signOut } from "@/lib/Firebase";
 import { auth } from "@/lib/Firebase";
 import UserModal from "../components/modals/UserModal";
-import Cookies from "js-cookie";
 type ViewType = "dashboard" | "instructions" | "test" | "results";
 
 export default function TestDashboard() {
@@ -20,9 +19,7 @@ export default function TestDashboard() {
   const [currentView, setCurrentView] = useState<ViewType>("dashboard");
   const [selectedTest, setSelectedTest] = useState<Test | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
-  // const [answers, setAnswers] = useState<Record<string, number>>({});
   const [answers, setAnswers] = useState<Record<string, number>>({});
-
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [testStarted, setTestStarted] = useState<boolean>(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -32,11 +29,8 @@ export default function TestDashboard() {
   const [isNavigationModalVisible, setIsNavigationModalVisible] =
     useState<boolean>(false);
   const [tests, setTests] = useState<Test[]>([]);
-  // const [fetchedQuestions, setFetchedQuestions] = useState<any[]>([]);
   const [fetchedQuestions, setFetchedQuestions] = useState<Question[]>([]);
-
   const [userName, setUserName] = useState<string | null>(null);
-
   const router = useRouter();
 
   useEffect(() => {
@@ -74,16 +68,6 @@ export default function TestDashboard() {
     }
   }, []);
 
-  // After fetching questions
-  // const fetchQuestion = async (): Promise<void> => {
-  //   try {
-  //     const data = await getDocByFirebase();
-  //     setFetchedQuestions(data);
-  //   } catch (error) {
-  //     console.error("Failed to fetch tests:", error);
-  //   }
-  // };
-
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
   const fetchQuestion = async (): Promise<void> => {
@@ -111,69 +95,6 @@ export default function TestDashboard() {
       console.error("Failed to fetch tests:", error);
     }
   };
-
-  //   const handleSubmitTest = (): void => {
-  //     if (!selectedTest) return;
-  //     let score = 0;
-
-  //     selectedTest.questions.forEach((question) => {
-  //       const questionId = String(question.id);
-  //       const userAnswer = answers[questionId];
-
-  //       console.log(
-  //         "Checking:",
-  //         questionId,
-  //         "UserAnswer:",
-  //         userAnswer,
-  //         "Correct:",
-  //         question.correctAnswer
-  //       );
-
-  //       // const isCorrect =
-  //       //   typeof userAnswer !== "undefined" &&
-  //       //   userAnswer === question.correctAnswer;
-  //       const isCorrect =
-  //         typeof userAnswer !== "undefined" &&
-  //         String(userAnswer) === String(question.correctAnswer);
-
-  //       if (isCorrect) {
-  //         score++;
-  //       }
-  //     });
-
-  //     const timeTakenInSeconds = selectedTest.duration * 60 - timeRemaining;
-  //     const minutes = Math.floor(timeTakenInSeconds / 60);
-  //     const seconds = timeTakenInSeconds % 60;
-  //     const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
-  //       .toString()
-  //       .padStart(2, "0")}`;
-
-  //     // const newResult: TestResult = {
-  //     //   score,
-  //     //   timeTaken,
-  //     //   testId: selectedTest.id,
-  //     //   dateCompleted: new Date().toLocaleDateString(),
-  //     // };
-
-  //     const newResult: TestResult = {
-  //   score,
-  //   timeTaken,
-  //   testId: selectedTest.id,
-  //   dateCompleted: new Date().toLocaleDateString(),
-  //   userId:auth.currentUser?.uid || "guest",
-  //   userAnswers,
-  //   totalQuestions: selectedTest.questions.length,
-  //   percentage: Math.round((score / selectedTest.questions.length) * 100),
-  // };
-
-  //     console.log("Newresultbeingsaved", newResult);
-
-  //     setTestResults((prev) => [...prev, newResult]);
-  //     setCurrentResult(newResult);
-  //     setTestStarted(false);
-  //     setCurrentView("results");
-  //   };
-
   const handleSubmitTest = (): void => {
     if (!selectedTest) return;
 
@@ -191,21 +112,23 @@ export default function TestDashboard() {
         score++;
       }
     });
-
-    const timeTakenInSeconds = selectedTest.duration * 30 - timeRemaining;
-    const minutes = Math.floor(timeTakenInSeconds / 60);
-    const seconds = timeTakenInSeconds % 60;
+const totalTestDurationInSeconds = selectedTest.duration * 60;
+    const timeTakenInSeconds = totalTestDurationInSeconds - timeRemaining;
+    const safeTimeTakenInSeconds = Math.max(0, timeTakenInSeconds);
+    const minutes = Math.floor(safeTimeTakenInSeconds / 60);
+    const seconds = safeTimeTakenInSeconds % 60;
+    
     const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
       .toString()
       .padStart(2, "0")}`;
-
-    const userId = auth.currentUser?.uid || "guest";
+const userId = auth.currentUser?.uid || "guest";
 
     const userAnswers = Object.entries(answers).map(
       ([questionId, selectedOption]) => ({
         questionId: Number(questionId),
         selectedOption,
       })
+
     );
 
     const newResult: TestResult = {
@@ -220,8 +143,7 @@ export default function TestDashboard() {
     };
 
     console.log("New result being saved", newResult);
-
-    setTestResults((prev) => [...prev, newResult]);
+  setTestResults((prev) => [...prev, newResult]);
     setCurrentResult(newResult);
     setTestStarted(false);
     setCurrentView("results");
@@ -229,8 +151,6 @@ export default function TestDashboard() {
 
   const handleLogout = (): void => setIsLogoutModalVisible(true);
   const cancelLogout = (): void => setIsLogoutModalVisible(false);
-
-  // New functions for navigation modal
   const handleHeaderTitleClick = (): void => {
     if (currentView !== "dashboard") {
       setIsNavigationModalVisible(true);
@@ -249,27 +169,19 @@ export default function TestDashboard() {
   const resetTestState = (): void => {
     setCurrentView("dashboard");
     setSelectedTest(null);
-    setCurrentResult(null); // Reset current result
+    setCurrentResult(null); 
     setTestStarted(false);
     setCurrentQuestionIndex(0);
     setAnswers({});
   };
-
-  // const confirmLogout = (): void => {
-  //   setIsLogoutModalVisible(false);
-  //   router.push("homes");
-  //   resetTestState();
-  // };
-
   const confirmLogout = async (): Promise<void> => {
     try {
-      await signOut(auth); 
-      setIsLogoutModalVisible(false); 
-      resetTestState(); 
-      router.push("/"); 
+      await signOut(auth);
+      setIsLogoutModalVisible(false);
+      resetTestState();
+      router.push("/");
     } catch (error) {
       console.error("Logout failed:", error);
-   
     }
   };
 
@@ -278,14 +190,14 @@ export default function TestDashboard() {
     setCurrentView("instructions");
     setAnswers({});
     setCurrentQuestionIndex(0);
-    setCurrentResult(null); //  Clear previous result when selecting new test
+    setCurrentResult(null); 
   };
 
   const handleStartTest = (): void => {
     if (!selectedTest) return;
-    // console.log(selectedTest, "selectedTestdsfgdg");
+ const durationInSeconds = selectedTest.duration * 60; 
     setCurrentView("test");
-    setTimeRemaining(30 * 60);
+    setTimeRemaining(durationInSeconds);
     setTestStarted(true);
   };
 
@@ -295,12 +207,8 @@ export default function TestDashboard() {
   ): void => {
     setAnswers((prev) => ({ ...prev, [String(questionId)]: answerIndex }));
   };
-
-  //  handleShowResults to properly set both test and result
   const handleShowResults = (test: Test): void => {
     console.log("=== SHOWING RESULTS ===", testResults, test);
-
-    // Find the latest result for this test
     const testResult = testResults
       .filter((result) => result.testId === test.id)
       .sort(
@@ -408,8 +316,6 @@ export default function TestDashboard() {
             setCurrentQuestionIndex={setCurrentQuestionIndex}
           />
         )}
-
-        {/*  results view condition */}
         {currentView === "results" && selectedTest && currentResult && (
           <ResultsView
             test={selectedTest}
