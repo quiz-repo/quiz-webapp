@@ -1,4 +1,3 @@
-
 "use client";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
@@ -46,9 +45,13 @@ export default function LoginPage() {
       toast.error("Please fill in all fields");
       return;
     }
+    if (formData.email === "admin@yopmail.com") {
+      toast.error("Email not valid for user login");
+      return; 
+    }
 
     setIsUserLoading(true);
- 
+
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -59,11 +62,11 @@ export default function LoginPage() {
       const idToken = await user.getIdToken();
 
       const expires = rememberMe ? 7 : 1; // 7 days if remember me, else 1 day
-    
+
       Cookies.set("token", idToken, {
-        expires, 
+        expires,
         path: "/",
-        secure: process.env.NODE_ENV === "production", 
+        secure: process.env.NODE_ENV === "production",
       });
 
       toast.success("User login successful");
@@ -87,7 +90,6 @@ export default function LoginPage() {
       setIsUserLoading(false);
     }
   };
-
 
   const handleForgotPassword = () => {
     router.push("/forgot-password");
@@ -155,7 +157,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         <div

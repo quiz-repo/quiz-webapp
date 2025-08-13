@@ -29,18 +29,16 @@ export function RouteProtector({ children }: { children: ReactNode }) {
 
     const token = Cookies.get("token");
     const isAdmin = localStorage.getItem("isAdmin") === "true";
-
-    // Public routes — /admin-panel is only public for NON-logged-in users
+    const adminEmail = "admin@yopmail.com";
     const publicRoutes = [
       "/",
       "/homes",
       "/register",
       "/login",
       "/forgot-password",
-      "/admin-panel", // Admin login page
+      "/admin-panel",
     ];
-
-    const protectedRoutes = ["/dashboard", "/adminPanel"];
+    const protectedRoutes = ["/dashboard", "/adminPanel"]; 
 
     const isPublic =
       publicRoutes.includes(pathname) ||
@@ -49,70 +47,45 @@ export function RouteProtector({ children }: { children: ReactNode }) {
     const isProtected = protectedRoutes.some(
       (r) => pathname === r || pathname.startsWith(r + "/")
     );
-
-    // If not logged in → block protected routes
-    if (!user || !token) {
-      if (isProtected) {
-        const sessionExpired = localStorage.getItem("sessionExpired");
-        if (sessionExpired) {
-          localStorage.removeItem("sessionExpired");
-          toast.error("Session expired. Please log in again.");
-        }
+    if (user?.email === adminEmail && pathname.startsWith("/dashboard")) {
+      toast.error("Email not valid for admin login");
+      setIsNavigating(true);
+      router.replace("/homes");
+      return;
+    }
+    if (pathname.startsWith("/adminPanel")) {
+      if (!user || !token || !isAdmin || user.email !== adminEmail) {
+        setIsNavigating(true);
+        router.replace("/homes"); 
+        return;
+      }
+    }
+    if (pathname.startsWith("/admin-panel")) {
+      if (user && token && isAdmin && user.email === adminEmail) {
+        router.replace("/adminPanel");
+        return;
+      }
+      if (user?.email && user.email !== adminEmail) {
+        toast.error("Email not valid for admin login");
         setIsNavigating(true);
         router.replace("/homes");
         return;
       }
     }
-
-    // If logged in as admin and trying to access admin login → redirect to adminPanel
-    if (
-      pathname.startsWith("/admin-panel") &&
-      user &&
-      token &&
-      isAdmin &&
-      user.email === "admin@yopmail.com"
-    ) {
-      setIsNavigating(true);
-      router.replace("/adminPanel");
-      return;
-    }
-
-    // If trying to open /adminPanel without admin access → redirect out
-    if (
-      pathname.startsWith("/adminPanel") &&
-      (!user || !token || !isAdmin || user.email !== "admin@yopmail.com")
-    ) {
+    if (isProtected && (!user || !token)) {
+      const sessionExpired = localStorage.getItem("sessionExpired");
+      if (sessionExpired) {
+        localStorage.removeItem("sessionExpired");
+        toast.error("Session expired. Please log in again.");
+      }
       setIsNavigating(true);
       router.replace("/homes");
-      return;
-    }
-
-    // If admin tries to go to dashboard → send to adminPanel
-    if (
-      pathname.startsWith("/dashboard") &&
-      isAdmin &&
-      user?.email === "admin@yopmail.com"
-    ) {
-      setIsNavigating(true);
-      router.replace("/adminPanel");
-      return;
-    }
-
-    // Redirect logged-in users from public pages to correct dashboard
-    if (user && token && isPublic) {
-      setIsNavigating(true);
-      if (isAdmin && user.email === "admin@yopmail.com") {
-        router.replace("/adminPanel");
-      } else {
-        router.replace("/dashboard");
-      }
       return;
     }
 
     setIsNavigating(false);
     setIsAllowed(true);
   }, [pathname, user, loading, router]);
-
   if (
     !pathname.startsWith("/admin-panel") &&
     !pathname.startsWith("/adminPanel")

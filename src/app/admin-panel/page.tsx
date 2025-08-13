@@ -5,6 +5,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Shield, Lock, Mail, AlertCircle } from "lucide-react";
 import { auth } from "@/lib/Firebase";
+import { toast } from "react-toastify";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -21,15 +22,23 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      if (email !== "admin@yopmail.com") throw new Error("Invalid admin credentials");
-      if (password !== "123456") throw new Error("Invalid password");
+      // Validate admin credentials
+      if (email !== "admin@yopmail.com" || password !== "123456") {
+        throw new Error("Invalid admin credentials");
+      }
 
+      // Firebase sign-in
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const token = await userCredential.user.getIdToken();
       localStorage.setItem("adminToken", token);
+
+      // Success toast
+      toast.success("Admin login successful!");
       router.push("/adminPanel");
-    } catch (error: any) {
-      setError(error.message || "Login failed. Please try again.");
+    } catch (err: any) {
+      const message = err.message || "Login failed. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -39,8 +48,6 @@ const AdminLogin = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#E0E9FF] via-[#F0E6FF] to-[#E6F7FF] flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="bg-[#F7F9FF] rounded-2xl p-8 shadow-lg border border-[#E4E8F5]">
-          
-       
           <div className="flex justify-center mb-6">
             <div className="bg-gradient-to-r from-blue-400 to-indigo-400 text-white px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm">
               <Shield className="w-4 h-4" />
@@ -48,23 +55,23 @@ const AdminLogin = () => {
             </div>
           </div>
 
-          {/* Header */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h2>
             <p className="text-gray-600 text-sm">
               Sign in to access the admin dashboard
             </p>
           </div>
-
+{/* 
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
               <p className="text-red-600 text-sm">{error}</p>
             </div>
-          )}
+          )} */}
 
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* Email */}
             <div>
               <label htmlFor="email" className="block text-gray-700 text-sm font-medium mb-2">
                 Email Address
@@ -86,7 +93,6 @@ const AdminLogin = () => {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label htmlFor="password" className="block text-gray-700 text-sm font-medium mb-2">
                 Password
@@ -119,7 +125,6 @@ const AdminLogin = () => {
               </div>
             </div>
 
-            {/* Button */}
             <button
               type="submit"
               disabled={loading}
@@ -131,7 +136,7 @@ const AdminLogin = () => {
                   Signing in...
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex cursor-pointer items-center gap-2">
                   <Shield className="w-5 h-5" />
                   Sign in to Admin Panel
                 </div>
@@ -139,7 +144,6 @@ const AdminLogin = () => {
             </button>
           </form>
 
-          {/* Footer */}
           <div className="mt-8 text-center">
             <p className="text-gray-500 text-xs">
               Authorized personnel only. All access is logged and monitored.
