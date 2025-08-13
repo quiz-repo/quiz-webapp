@@ -652,8 +652,31 @@ const AdminPanel = () => {
               disabled={loading}
               className="w-full cursor-pointer bg-red-50 text-red-700 border border-red-200 px-4 py-3.5 rounded-xl font-medium hover:bg-red-100 transition-all disabled:opacity-50 flex items-center justify-center h-[100%]"
             >
-              <LogOutIcon className="mr-2 w-5 h-5 " />
-              Sign Out
+              {loading ? (
+                <svg
+                  className="animate-spin mr-2 w-5 h-5 text-red-700"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  ></path>
+                </svg>
+              ) : (
+                <LogOutIcon className="mr-2 w-5 h-5" />
+              )}
+              {loading ? "Signing Out..." : "Sign Out"}
             </button>
           </div>
         </div>
@@ -946,175 +969,226 @@ const AdminPanel = () => {
             )}
 
             {/* Add Test Modal */}
-       {showAddTest && (
-  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200">
-      <div className="p-6 border-b border-slate-200">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <Plus className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">Create New Test</h3>
-              <p className="text-slate-600 text-sm">Add a comprehensive test to your library</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-all"
-          >
-            <X className="w-5 cursor-pointer h-5" />
-          </button>
-        </div>
-      </div>
+            {showAddTest && (
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200">
+                  <div className="p-6 border-b border-slate-200">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                          <Plus className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900">
+                            Create New Test
+                          </h3>
+                          <p className="text-slate-600 text-sm">
+                            Add a comprehensive test to your library
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={onClose}
+                        className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-all"
+                      >
+                        <X className="w-5 cursor-pointer h-5" />
+                      </button>
+                    </div>
+                  </div>
 
-      <div className="p-4 max-h-[60vh] overflow-y-auto">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Test Title</label>
-              <input
-                type="text"
-                placeholder="Enter test title"
-                value={newTest.title}
-                onChange={(e) => setNewTest({ ...newTest, title: e.target.value })}
-                className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Subject</label>
-              <input
-                type="text"
-                placeholder="e.g., JavaScript, React, Node.js"
-                value={newTest.subject}
-                onChange={(e) => setNewTest({ ...newTest, subject: e.target.value })}
-                className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
+                  <div className="p-4 max-h-[60vh] overflow-y-auto">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Test Title
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Enter test title"
+                            value={newTest.title}
+                            onChange={(e) =>
+                              setNewTest({ ...newTest, title: e.target.value })
+                            }
+                            className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Subject
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g., JavaScript, React, Node.js"
+                            value={newTest.subject}
+                            onChange={(e) =>
+                              setNewTest({
+                                ...newTest,
+                                subject: e.target.value,
+                              })
+                            }
+                            className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Duration (mins)</label>
-              <input
-                type="number"
-                placeholder="60"
-                value={newTest.duration}
-                onChange={(e) => setNewTest({ ...newTest, duration: e.target.value })}
-                className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Questions</label>
-              <input
-                type="number"
-                placeholder="10"
-                value={newTest.questions}
-                onChange={(e) => setNewTest({ ...newTest, questions: e.target.value })}
-                className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Difficulty</label>
-              <Select
-                value={newTest.difficulty || undefined}
-                allowClear
-                onChange={(value) => setNewTest({ ...newTest, difficulty: value })}
-                className="custom-select text-base"
-                style={{ width: '190px', height: '48px' }}
-                placeholder="Select difficulty"
-                options={[
-                  { value: 'Beginner', label: 'Beginner' },
-                  { value: 'Intermediate', label: 'Intermediate' },
-                  { value: 'Advanced', label: 'Advanced' },
-                ]}
-              />
-            </div>
-          </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Duration (mins)
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="60"
+                            value={newTest.duration}
+                            onChange={(e) =>
+                              setNewTest({
+                                ...newTest,
+                                duration: e.target.value,
+                              })
+                            }
+                            className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Questions
+                          </label>
+                          <input
+                            type="number"
+                            placeholder="10"
+                            value={newTest.questions}
+                            onChange={(e) =>
+                              setNewTest({
+                                ...newTest,
+                                questions: e.target.value,
+                              })
+                            }
+                            className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                            Difficulty
+                          </label>
+                          <Select
+                            value={newTest.difficulty || undefined}
+                            allowClear
+                            onChange={(value) =>
+                              setNewTest({ ...newTest, difficulty: value })
+                            }
+                            className="custom-select text-base"
+                            style={{ width: "190px", height: "48px" }}
+                            placeholder="Select difficulty"
+                            options={[
+                              { value: "Beginner", label: "Beginner" },
+                              { value: "Intermediate", label: "Intermediate" },
+                              { value: "Advanced", label: "Advanced" },
+                            ]}
+                          />
+                        </div>
+                      </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
-            <Select
-              value={newTest.status || undefined}
-              allowClear
-              onChange={(value) => setNewTest({ ...newTest, status: value })}
-              className="custom-select-advance text-base"
-              style={{ width: '100%', height: '48px' }}
-              placeholder="Select status"
-              options={[
-                { value: 'Draft', label: 'Draft' },
-                { value: 'Active', label: 'Active' },
-              ]}
-            />
-          </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Status
+                        </label>
+                        <Select
+                          value={newTest.status || undefined}
+                          allowClear
+                          onChange={(value) =>
+                            setNewTest({ ...newTest, status: value })
+                          }
+                          className="custom-select-advance text-base"
+                          style={{ width: "100%", height: "48px" }}
+                          placeholder="Select status"
+                          options={[
+                            { value: "Draft", label: "Draft" },
+                            { value: "Active", label: "Active" },
+                          ]}
+                        />
+                      </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
-            <textarea
-              placeholder="Test description..."
-              value={newTest.description}
-              onChange={(e) => setNewTest({ ...newTest, description: e.target.value })}
-              className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24 resize-none"
-            />
-          </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Description
+                        </label>
+                        <textarea
+                          placeholder="Test description..."
+                          value={newTest.description}
+                          onChange={(e) =>
+                            setNewTest({
+                              ...newTest,
+                              description: e.target.value,
+                            })
+                          }
+                          className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24 resize-none"
+                        />
+                      </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-3">Instructions</label>
-            {newTest.instructions.map((inst, idx) => (
-              <div key={idx} className="flex items-center gap-3 mb-3">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={inst}
-                    onChange={(e) => handleInstructionChange(idx, e.target.value)}
-                    className="w-full p-3 rounded-xl bg-white border border-slate-300 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder={`Instruction ${idx + 1}`}
-                  />
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-3">
+                          Instructions
+                        </label>
+                        {newTest.instructions.map((inst, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center gap-3 mb-3"
+                          >
+                            <div className="flex-1">
+                              <input
+                                type="text"
+                                value={inst}
+                                onChange={(e) =>
+                                  handleInstructionChange(idx, e.target.value)
+                                }
+                                className="w-full p-3 rounded-xl bg-white border border-slate-300 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder={`Instruction ${idx + 1}`}
+                              />
+                            </div>
+                            {newTest.instructions.length > 1 && (
+                              <button
+                                onClick={() => removeInstruction(idx)}
+                                className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all"
+                              >
+                                <X className="w-4 cursor-pointer h-4" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={addInstruction}
+                          className="text-blue-600 cursor-pointer hover:text-blue-700 text-sm font-medium flex items-center hover:underline"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Add Instruction
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 border-t border-slate-200">
+                    <div className="flex space-x-4">
+                      <button
+                        onClick={handleAddTest}
+                        disabled={false}
+                        className="flex-1 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center shadow-sm"
+                      >
+                        <Save className="w-5 h-5 mr-2" />
+                        Create Test
+                      </button>
+                      <button
+                        onClick={onClose}
+                        className="px-6 py-3 cursor-pointer bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors border border-slate-200"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                {newTest.instructions.length > 1 && (
-                  <button
-                    onClick={() => removeInstruction(idx)}
-                    className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all"
-                  >
-                    <X className="w-4 cursor-pointer h-4" />
-                  </button>
-                )}
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={addInstruction}
-              className="text-blue-600 cursor-pointer hover:text-blue-700 text-sm font-medium flex items-center hover:underline"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add Instruction
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6 border-t border-slate-200">
-        <div className="flex space-x-4">
-          <button
-            onClick={handleAddTest}
-            disabled={false}
-            className="flex-1 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center shadow-sm"
-          >
-            <Save className="w-5 h-5 mr-2" />
-            Create Test
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-3 cursor-pointer bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors border border-slate-200"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            )}
 
             {showAddQuestion && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
