@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Shield, Lock, Mail, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Shield, Lock, Mail } from "lucide-react";
 import { auth } from "@/lib/Firebase";
 import { toast } from "react-toastify";
 
@@ -28,7 +28,11 @@ const AdminLogin = () => {
       }
 
       // Firebase sign-in
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       const token = await userCredential.user.getIdToken();
       localStorage.setItem("adminToken", token);
 
@@ -63,7 +67,7 @@ const AdminLogin = () => {
               Sign in to access the admin dashboard
             </p>
           </div>
-{/* 
+          {/* 
           {error && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
@@ -73,7 +77,10 @@ const AdminLogin = () => {
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-gray-700 text-sm font-medium mb-2">
+              <label
+                htmlFor="email"
+                className="block text-gray-700 text-sm font-medium mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -94,7 +101,10 @@ const AdminLogin = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-gray-700 text-sm font-medium mb-2">
+              <label
+                htmlFor="password"
+                className="block text-gray-700 text-sm font-medium mb-2"
+              >
                 Password
               </label>
               <div className="relative">

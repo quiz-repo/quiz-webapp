@@ -22,77 +22,70 @@ export function RouteProtector({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isAllowed, setIsAllowed] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     if (loading) return;
 
     const token = Cookies.get("token");
     const isAdmin = localStorage.getItem("isAdmin") === "true";
-    const adminEmail = "admin@yopmail.com";
+
     const publicRoutes = [
       "/",
       "/homes",
       "/register",
       "/login",
       "/forgot-password",
-      "/admin-panel",
+      "/admin-panel", 
     ];
-    const protectedRoutes = ["/dashboard", "/adminPanel"]; 
 
-    const isPublic =
-      publicRoutes.includes(pathname) ||
-      publicRoutes.some((r) => r !== "/" && pathname.startsWith(r + "/"));
+    const protectedRoutes = ["/dashboard", "/adminPanel"];
 
+    const isPublic = publicRoutes.includes(pathname);
     const isProtected = protectedRoutes.some(
       (r) => pathname === r || pathname.startsWith(r + "/")
     );
-    if (user?.email === adminEmail && pathname.startsWith("/dashboard")) {
-      toast.error("Email not valid for admin login");
-      setIsNavigating(true);
-      router.replace("/homes");
-      return;
-    }
-    if (pathname.startsWith("/adminPanel")) {
-      if (!user || !token || !isAdmin || user.email !== adminEmail) {
-        setIsNavigating(true);
-        router.replace("/homes"); 
-        return;
-      }
-    }
-    if (pathname.startsWith("/admin-panel")) {
-      if (user && token && isAdmin && user.email === adminEmail) {
-        router.replace("/adminPanel");
-        return;
-      }
-      if (user?.email && user.email !== adminEmail) {
-        toast.error("Email not valid for admin login");
-        setIsNavigating(true);
+    if (!user || !token) {
+      if (isProtected) {
+        const sessionExpired = localStorage.getItem("sessionExpired");
+        if (sessionExpired) {
+          localStorage.removeItem("sessionExpired");
+          toast.error("Session expired. Please log in again.");
+        }
         router.replace("/homes");
         return;
       }
-    }
-    if (isProtected && (!user || !token)) {
-      const sessionExpired = localStorage.getItem("sessionExpired");
-      if (sessionExpired) {
-        localStorage.removeItem("sessionExpired");
-        toast.error("Session expired. Please log in again.");
-      }
-      setIsNavigating(true);
-      router.replace("/homes");
+      setIsAllowed(true);
       return;
     }
-
-    setIsNavigating(false);
+    if (isPublic) {
+      if (isAdmin && user.email === "admin@yopmail.com") {
+        router.replace("/adminPanel");
+      } else {
+        router.replace("/dashboard");
+      }
+      return;
+    }
+    if (
+      pathname.startsWith("/dashboard") &&
+      isAdmin &&
+      user.email === "admin@yopmail.com"
+    ) {
+      router.replace("/adminPanel");
+      return;
+    }
+    if (
+      (pathname.startsWith("/adminPanel") ||
+        pathname.startsWith("/admin-panel")) &&
+      (!isAdmin || user.email !== "admin@yopmail.com")
+    ) {
+      router.replace("/dashboard");
+      return;
+    }
     setIsAllowed(true);
   }, [pathname, user, loading, router]);
-  if (
-    !pathname.startsWith("/admin-panel") &&
-    !pathname.startsWith("/adminPanel")
-  ) {
-    if (loading || isNavigating || !isAllowed) {
-      return <LoadingSpinner />;
-    }
+
+  if (loading || !isAllowed) {
+    return <LoadingSpinner />;
   }
 
   return <>{children}</>;
