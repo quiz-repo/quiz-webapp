@@ -308,6 +308,7 @@ const AdminPanel = () => {
         ...doc.data(),
       })) as Question[];
       setQuestions(questionsData);
+      console.log(questionsData,"iuhjrfguihgei")
     } catch (error) {
       console.error("Error loading questions:", error);
     } finally {
@@ -438,8 +439,6 @@ const AdminPanel = () => {
       );
 
       setEditingQuestion(null);
-
-      // Recalculate stats after editing question
       await loadTests();
 
       console.log("Question updated successfully!");
@@ -475,8 +474,6 @@ const AdminPanel = () => {
             : test
         )
       );
-
-      // Recalculate stats after deleting question
       await loadTests();
 
       console.log("Question deleted successfully!");
@@ -528,7 +525,7 @@ const AdminPanel = () => {
         description: newTest.description,
         instructions: newTest.instructions.filter((i) => i.trim() !== ""),
         created: new Date().toISOString().split("T")[0],
-        createdAt: Timestamp.now(), // Add timestamp for better querying
+        createdAt: Timestamp.now(), 
       };
 
       const docId = await setDocByFirebase(testData);
@@ -550,8 +547,6 @@ const AdminPanel = () => {
         instructions: [""],
       });
       setShowAddTest(false);
-
-      // Recalculate stats after adding test
       await loadTests();
 
       console.log("Test added successfully!");
