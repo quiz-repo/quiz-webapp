@@ -1,4 +1,4 @@
-import { BarChart2, Award, ArrowLeft } from "lucide-react";
+import { BarChart2, Award } from "lucide-react";
 import { Test, TestResult } from "./type";
 
 interface ResultsViewProps {
@@ -15,7 +15,7 @@ export const ResultsView = ({
   onLogout,
 }: ResultsViewProps) => {
 
-  const totalQuestions = 50; // Fixed to 50 questions
+  const totalQuestions = 50; 
   const percentage = Math.round((result.score / totalQuestions) * 100);
 
   let performance = "";

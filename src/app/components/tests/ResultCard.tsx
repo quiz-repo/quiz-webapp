@@ -1,5 +1,3 @@
-
-
 import { BarChart2, Award } from "lucide-react";
 import { Test, TestResult } from "./type";
 

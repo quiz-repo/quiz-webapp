@@ -1,4 +1,4 @@
-// Represents a single question in a test
+
 export interface Question {
   id: number;
   question: string;
@@ -6,9 +6,6 @@ export interface Question {
   correctAnswer: number;
   [key: string]: any;
 }
-
-// Represents a test with multiple questions
-// type.ts
 export interface Test {
  id: string;
   question: string;

@@ -15,7 +15,6 @@ export const QuestionNavigator = ({
   answers,
   onQuestionSelect,
 }: QuestionNavigatorProps) => {
-  // Don't render if no questions are loaded yet
   if (!questions || questions.length === 0) {
     return (
       <div className="mt-6 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-indigo-900/20 backdrop-blur-xl rounded-3xl p-6 border-l border-r border-b border-white/30 shadow-2xl">
@@ -70,9 +69,7 @@ export const QuestionNavigator = ({
           {questions.map((question, index) => {
             const isCurrent = index === currentQuestionIndex;
             const hasAnswer = answers[question.id] !== undefined;
-            // Allow navigation to any previous question or current question
             const canNavigate = index <= currentQuestionIndex;
-
             let buttonStyle = "";
 
             if (isCurrent) {
@@ -89,9 +86,6 @@ export const QuestionNavigator = ({
             return (
               <button
                 key={question.id}
-                // onClick={() => {
-                //   if (canNavigate) onQuestionSelect(index);
-                // }}
                 disabled={!canNavigate}
                 className={`relative flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl text-sm sm:text-base font-bold 
                   transition-all duration-300 transform border flex items-center justify-center
@@ -131,14 +125,10 @@ export const QuestionNavigator = ({
     </div>
   );
 };
-
-// Demo component for testing (remove this in production)
 const Demo = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<Record<number, number>>({});
   const [questions, setQuestions] = React.useState<any[]>([]);
-
-  // Simulate Firebase data loading with 50 random questions
   React.useEffect(() => {
     const simulateFirebaseData = () => {
       const allQuestions = Array.from({ length: 100 }, (_, i) => ({
@@ -147,14 +137,12 @@ const Demo = () => {
         options: [`Option A for Q${i + 1}`, `Option B for Q${i + 1}`, `Option C for Q${i + 1}`],
         difficulty: ["Easy", "Medium", "Hard"][Math.floor(Math.random() * 3)]
       }));
-      
-      // Shuffle and pick 50 random questions
       const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
       const selected50 = shuffled.slice(0, 50);
       
       setTimeout(() => {
         setQuestions(selected50);
-      }, 1000); // Simulate loading delay
+      }, 1000); 
     };
 
     simulateFirebaseData();

@@ -1280,7 +1280,6 @@ const AdminPanel = () => {
                   <div className="p-4 border-t border-slate-200">
                     <div className="flex space-x-3">
                       <button
-                        //  loading={loading}
                         onClick={handleAddQuestion}
                         disabled={false}
                         className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center shadow-sm"

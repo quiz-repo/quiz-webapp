@@ -17,14 +17,12 @@ const UserModal: React.FC = () => {
   useEffect(() => {
     const currentUser = auth.currentUser;
     if (currentUser) {
-      console.log("======uugyuy", currentUser);
       console.log("Photo URL:", currentUser.photoURL);
       setUser({
         name: currentUser.displayName || "User",
         email: currentUser.email || "No Email",
         avatar: currentUser.photoURL || undefined,
       });
-      // console.log(user,"kjhbgugughujh")
     }
   }, []);
 
