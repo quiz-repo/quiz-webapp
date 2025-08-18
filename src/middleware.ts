@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
+  // console.log(token,"kjhgjhghjugh")
   const { pathname } = request.nextUrl;
 
   const publicRoutes = [

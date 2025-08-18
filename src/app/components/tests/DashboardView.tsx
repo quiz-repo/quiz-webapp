@@ -19,7 +19,7 @@ export const DashboardView = ({
   onShowResults,
 }: DashboardViewProps) => {
   const [totalUsers, setTotalUsers] = useState<number>(0);
-  console.log(tests, "yhgyhf");
+ 
   useEffect(() => {
     const fetchUsers = async () => {
       const count = await getTotalUsers();
@@ -38,15 +38,6 @@ export const DashboardView = ({
           value={tests?.length || 0}
           icon={<BookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-blue-500" />}
         />
-        {/* <StatsCard
-          title="Total Questions"
-          // value={tests.reduce((sum, test) => sum + (test?.questions?.length || 0), 0)}
-          value={tests[0]?.questions?.length || 0}
-        
-          icon={
-            <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-green-500" />
-          }
-        /> */}
         <StatsCard
           title="Total Questions (50/test)"
           value={tests.reduce(
@@ -61,12 +52,6 @@ export const DashboardView = ({
         <StatsCard
           title="Avg Duration per test"
           value={`${30} min `}
-          // tests.length > 0
-          //   ? `${Math.round(
-          //       tests.reduce((sum, test) => sum + (test?.duration || 0), 0) / tests.length
-          //     )}m`
-          //   : "0m"
-          // }
           icon={<Clock className="w-7 h-7 sm:w-8 sm:h-8 text-purple-500" />}
         />
         <StatsCard

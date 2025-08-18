@@ -22,12 +22,9 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      // Validate admin credentials
       if (email !== "admin@yopmail.com" || password !== "123456") {
         throw new Error("Invalid admin credentials");
       }
-
-      // Firebase sign-in
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -35,8 +32,6 @@ const AdminLogin = () => {
       );
       const token = await userCredential.user.getIdToken();
       localStorage.setItem("adminToken", token);
-
-      // Success toast
       toast.success("Admin login successful!");
       router.push("/adminPanel");
     } catch (err: any) {
@@ -67,14 +62,6 @@ const AdminLogin = () => {
               Sign in to access the admin dashboard
             </p>
           </div>
-          {/* 
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )} */}
-
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label

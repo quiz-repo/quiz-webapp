@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import {  ArrowRight } from "lucide-react";
 import { Test } from "./type";
 import { QuestionNavigator } from "./QuestionNavigator";
 import { TestTimer } from "./common/Timer";
@@ -31,7 +31,6 @@ export const TestView = ({
   test,
   timeRemaining,
   onAnswerSelect,
-  onPreviousQuestion,
   onNextQuestion,
   onSubmitTest,
   answers,
@@ -99,8 +98,6 @@ export const TestView = ({
   useEffect(() => {
     fetchQuestions();
   }, [test?.id]);
-
-  // ✅ Enter key support for navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
