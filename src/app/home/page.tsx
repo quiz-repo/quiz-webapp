@@ -8,9 +8,22 @@ const OnlineTestLandingPage = () => {
   const handleRegister = () => {
     router.push("register");
   };
+  const handleAdminLogin = () => {
+    router.push("/admin-login"); // change this path if needed
+  };
 
   return (
-    <div className="font-sans text-white bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 min-h-screen px-4 py-8">
+    <div className="font-sans text-white bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 min-h-screen px-4 py-8 relative">
+      {/* Admin Login Button at Top Right */}
+      <div className="absolute top-[41px] right-6 z-[9999]">
+        <button
+          onClick={handleAdminLogin}
+          className="bg-white/10 backdrop-blur-sm cursor-pointer text-white font-medium px-5 py-2.5 rounded-full border border-white/20 hover:bg-white/20 hover:border-white/30 transition-all duration-300 shadow-lg"
+        >
+          Admin Login
+        </button>
+      </div>
+
       {/* Hero Section */}
       <section className="bg-white/10 backdrop-blur-sm rounded-xl p-10 text-center shadow-lg border border-white/20">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">

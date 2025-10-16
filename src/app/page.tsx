@@ -1,7 +1,7 @@
 // 'use client';
 
 
-import OnlineTestLandingPage from "./homes/page";
+import OnlineTestLandingPage from "./home/page";
 
 
 export default function Home() {

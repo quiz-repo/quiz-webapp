@@ -31,7 +31,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
 
     const publicRoutes = [
       "/",
-      "/homes",
+      "/home",
       "/register",
       "/login",
       "/forgot-password",
@@ -51,7 +51,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
           localStorage.removeItem("sessionExpired");
           toast.error("Session expired. Please log in again.");
         }
-        router.replace("/homes");
+        router.replace("/home");
         return;
       }
       setIsAllowed(true);

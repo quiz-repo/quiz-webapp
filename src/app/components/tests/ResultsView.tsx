@@ -115,13 +115,8 @@ export const ResultsView = ({
         >
           Back to Dashboard
         </button>
-        <button
-          onClick={onLogout}
-          className="px-6 py-3 cursor-pointer bg-red-600/30 text-red-300 border border-red-500/30 rounded-lg hover:bg-red-600/40 transition-colors font-semibold"
-        >
-          Logout
-        </button>
-      </div>
+        
+      </div> 
     </div>
   );
 };

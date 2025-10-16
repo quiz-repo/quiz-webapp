@@ -1,8 +1,6 @@
 "use clent";
 import { Clock, BookOpen, ArrowRight } from "lucide-react";
 import { Test } from "./type";
-import ConfirmModal from "../modals/ConfirmModal";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface TestCardProps {
@@ -31,15 +29,17 @@ export const TestCard = ({ test, onClick }: TestCardProps) => {
               <Clock className="w-4 h-4 inline mr-1" />
               {30}minutes
             </span>
-            <span className="text-green-300">
-              <BookOpen className="w-4 h-4 inline mr-1" />
-              {
-                test.questions
-                  .sort(() => 0.5 - Math.random()) 
-                  .slice(0, 50).length
-              }{" "}
-              questions
-            </span>
+          <span className="text-green-300">
+  <BookOpen className="w-4 h-4 inline mr-1" />
+  {
+    Array.isArray(test.questions)
+      ? test.questions
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 50).length
+      : 0
+  }{" "}
+  questions
+</span>
             <span className="text-yellow-300">Level: {test.difficulty}</span>
             <span className="text-blue-300">Subject: {test.subject}</span>
           </div>
