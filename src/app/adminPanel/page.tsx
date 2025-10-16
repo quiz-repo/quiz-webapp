@@ -3,26 +3,16 @@ import React, { useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Papa from "papaparse";
 import {
-  Plus,
-  Edit2,
-  Trash2,
-  Save,
-  X,
   LogOutIcon,
-  Edit,
   BarChart3,
   FileText,
-  Clock,
   Award,
   TrendingUp,
   FileQuestion,
   Users,
-  CheckCircle,
-  Search,
   Target,
-  BookOpen,
+
   Activity,
-  Upload,
 } from "lucide-react";
 import {
   collection,
@@ -44,8 +34,6 @@ import {
   signOut,
   getAllUsers,
   getUserTestResultsById,
-  isAdmin,
-  createAdmin,
   getTestAnalytics,
   storage,
 } from "@/lib/Firebase";
@@ -53,8 +41,6 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
 import AdminModal from "../components/modals/AdminModal";
-import { Select } from "antd";
-import TestAnalysis from "../components/TestAnalysis";
 import UserManagement from "../components/UserManagement";
 import TestManagement from "../components/TestManagement";
 
