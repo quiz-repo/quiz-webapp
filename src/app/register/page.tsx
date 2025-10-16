@@ -81,12 +81,13 @@ export default function Register() {
       return false;
     }
 
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(formData.phone)) {
-      setError("Please enter a valid 10-digit phone number");
-      return false;
-    }
+const phone = formData.phone.trim();
+const phoneRegex = /^\+?\d{10,15}$/;
 
+if (!phoneRegex.test(phone)) {
+  setError("Please enter a valid phone number");
+  return false;
+}
     return true;
   };
 
@@ -279,7 +280,7 @@ export default function Register() {
                   placeholder="Enter your mobile number"
                   required
                 /> */}
-              <div>
+           <div>
                 <label
                   htmlFor="phone"
                   className="block text-xs font-medium text-white mb-1"
@@ -287,9 +288,8 @@ export default function Register() {
                   Phone Number
                 </label>
                 <PhoneInput
-                //  id="phone"
                   enableSearch={true}
-                  placeholder="Search"
+                  placeholder="Enter phone number"
                   disableSearchIcon
                   searchClass="new-search"
                   searchStyle={{
@@ -298,24 +298,27 @@ export default function Register() {
                     border: "none",
                     margin: "0",
                   }}
-                  country={"us"}
-                  // value={phone}
-                  // onChange={(phone) => setPhone(phone || "")}
+                  country={"in"}
+                  value={formData.phone}
+                  onChange={(phone) => setFormData((prev) => ({ ...prev, phone: phone || "" }))}
                   dropdownStyle={{
-                    // top: "23px",
                     bottom: "100%",
                     position: "absolute",
-                    zIndex: 9999, // Ensure it stays above other elements
+                    zIndex: 9999,
                   }}
                   inputStyle={{
                     height: "44px",
                     width: "100%",
-                    paddingLeft: "48px", // Adjust for flag and code inside input
+                    paddingLeft: "48px",
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    borderRadius: "8px",
+                    color: "white",
                   }}
                   containerStyle={{ position: "relative" }}
                   buttonStyle={{
                     position: "absolute",
-                    left: "10px", // Align flag and code inside input box
+                    left: "10px",
                     top: "50%",
                     transform: "translateY(-50%)",
                     background: "transparent",
