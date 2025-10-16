@@ -25,12 +25,14 @@ interface TestResult {
 interface User {
   id: string;
   name: string;
+  displayName?: string;
   email: string;
-  status: string;
-  joinDate?: string | { toDate: () => Date };
+  status?: "active" | "inactive";
+  joinDate: string;
   completedTests: number;
   totalTests: number;
   avgScore: number;
+  createdAt?: any;
   testResults?: TestResult[];
   photoURL?: string;
 }
@@ -44,7 +46,7 @@ interface UserManagementProps {
   loading: boolean;
   filteredUsers: User[];
   selectedUser: User | null;
-  setSelectedUser: (user: User | null) => void;
+  setSelectedUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({
@@ -68,11 +70,11 @@ const UserManagement: React.FC<UserManagementProps> = ({
     setIsModalOpen(false);
     setSelectedUser(null);
   };
+  
   const formatDate = (date: any) => {
     if (!date) return "Unknown";
     try {
-      const jsDate =
-        typeof date.toDate === "function" ? date.toDate() : new Date(date);
+      const jsDate = new Date(date);
       return jsDate.toLocaleString("en-US", {
         year: "numeric",
         month: "short",

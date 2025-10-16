@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, CheckCircle, Clock } from "lucide-react";
+import { BookOpen, CheckCircle, Clock } from "lucide-react";
 import { Test } from "./type";
 
 interface InstructionsViewProps {
@@ -6,6 +6,8 @@ interface InstructionsViewProps {
   onBack: () => void;
   onStartTest: () => void;
 }
+
+
 export const InstructionsView = ({
   test,
   onStartTest,
@@ -13,16 +15,18 @@ export const InstructionsView = ({
   <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 md:p-8 border border-white/20">
     {/* Header */}
     <div className="text-center mb-6 sm:mb-8">
-      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">{test.title}</h2>
-      
+      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
+        {test.title}
+      </h2>
+
       <div className="flex flex-col sm:flex-row justify-center items-start sm:items-center gap-4 sm:gap-8 text-blue-200 text-sm sm:text-base">
         <div className="flex items-center">
           <Clock className="w-5 h-5 mr-2" />
-          {30} minutes
+          {test.duration || 30} minutes
         </div>
         <div className="flex items-center">
           <BookOpen className="w-5 h-5 mr-2" />
-           {50} questions
+          {test.totalQuestions || 50} questions
         </div>
         <div className="flex items-center">
           <CheckCircle className="w-5 h-5 mr-2" />
@@ -33,9 +37,11 @@ export const InstructionsView = ({
 
     {/* Instructions */}
     <div className="mb-6 sm:mb-8">
-      <h3 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">Instructions:</h3>
+      <h3 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">
+        Instructions:
+      </h3>
       <ul className="space-y-3 text-blue-200 text-sm sm:text-base">
-        {test?.instructions?.map((instruction, index) => (
+        {test.instructions?.map((instruction, index) => (
           <li key={index} className="flex items-start">
             <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs sm:text-sm mr-3 mt-1 flex-shrink-0">
               {index + 1}
