@@ -54,46 +54,109 @@ export const TestView = ({
     return arr;
   }
 
-  const fetchQuestions = async () => {
-    if (!test?.id) {
-      setIsLoading(false);
+  // const fetchQuestions = async () => {
+  //   if (!test?.id) {
+  //     setIsLoading(false);
+  //     return;
+  //   }
+
+  //   try {
+  //     setIsLoading(true);
+  //     const docRef = doc(db, "tests", test.id);
+  //     const docSnap = await getDoc(docRef);
+
+  //     if (docSnap.exists()) {
+  //       const data = docSnap.data();
+  //       const originalQuestions = data.questions || [];
+
+  //       if (originalQuestions.length === 0) {
+  //         console.warn("No questions found in test document");
+  //         setQuestions([]);
+  //         setIsLoading(false);
+  //         return;
+  //       }
+
+  //       const shuffled = shuffleArray(originalQuestions);
+  //       const selected50Questions = shuffled.slice(0, 50);
+
+  //       console.log(
+  //         `Loaded ${selected50Questions.length} questions out of ${originalQuestions.length} total questions`
+  //       );
+  //       setQuestions(selected50Questions);
+  //     } else {
+  //       console.warn("No such test document!");
+  //       setQuestions([]);
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to fetch test questions:", error);
+  //     setQuestions([]);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+const fetchQuestions = async () => {
+  if (!test?.id) {
+    console.warn("⚠️ No test ID provided. Skipping fetch.");
+    setIsLoading(false);
+    return;
+  }
+
+  try {
+    setIsLoading(true);
+    console.log("📘 Fetching test data for ID:", test.id);
+
+    const docRef = doc(db, "tests", test.id);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      console.warn("❌ No such test document found in Firestore!");
+      setQuestions([]);
       return;
     }
 
-    try {
-      setIsLoading(true);
-      const docRef = doc(db, "tests", test.id);
-      const docSnap = await getDoc(docRef);
+    const data = docSnap.data();
+    console.log("✅ Firestore test data fetched:", data);
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const originalQuestions = data.questions || [];
+    // --- ✅ Handle multiple possible structures ---
+    let originalQuestions =
+      data.questions ||
+      data.questionList ||
+      data.testQuestions ||
+      data.data?.questions || // nested structure support
+      [];
 
-        if (originalQuestions.length === 0) {
-          console.warn("No questions found in test document");
-          setQuestions([]);
-          setIsLoading(false);
-          return;
-        }
-
-        const shuffled = shuffleArray(originalQuestions);
-        const selected50Questions = shuffled.slice(0, 50);
-
-        console.log(
-          `Loaded ${selected50Questions.length} questions out of ${originalQuestions.length} total questions`
-        );
-        setQuestions(selected50Questions);
-      } else {
-        console.warn("No such test document!");
-        setQuestions([]);
+    // --- ✅ Parse if stored as stringified JSON ---
+    if (typeof originalQuestions === "string") {
+      try {
+        originalQuestions = JSON.parse(originalQuestions);
+      } catch (err) {
+        console.error("❌ Failed to parse questions JSON string:", err);
+        originalQuestions = [];
       }
-    } catch (error) {
-      console.error("Failed to fetch test questions:", error);
-      setQuestions([]);
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    // --- ✅ Validate questions array ---
+    if (!Array.isArray(originalQuestions) || originalQuestions.length === 0) {
+      console.warn(`⚠️ No valid questions found in Firestore for test ID: ${test.id}`);
+      setQuestions([]);
+      return;
+    }
+
+    // --- ✅ Shuffle and limit to 50 questions ---
+    const shuffled = shuffleArray(originalQuestions);
+    const selectedQuestions = shuffled.slice(0, 50);
+
+    console.log(`hjbjfbdgfhiud Loaded ${selectedQuestions.length} questions (out of ${originalQuestions.length})`);
+
+    setQuestions(selectedQuestions);
+  } catch (error) {
+    console.error("🔥 Failed to fetch test questions:", error);
+    setQuestions([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchQuestions();

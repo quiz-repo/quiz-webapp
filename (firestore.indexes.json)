@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.token.email == "admin@yopmail.com";
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /tests/{document} {
+      allow read: if isAuthenticated();
+      allow write, create, update, delete: if isAdmin();
+    }
+    
+    match /questions/{document} {
+      allow read: if isAuthenticated();
+      allow write, create, update, delete: if isAdmin();
+    }
+   match /testResults/{document} {
+  allow read: if isAdmin() || (isAuthenticated() && isOwner(resource.data.userId));
+  allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+  allow update: if isAuthenticated() && isOwner(resource.data.userId);
+  allow delete: if isAdmin() || (isAuthenticated() && isOwner(resource.data.userId));
+}
+
+    
+    match /users/{userId} {
+      // Admin or owner can get a single user doc
+      allow get: if request.auth != null &&
+                    (isAdmin() || request.auth.uid == userId);
+
+      // ✅ Only admin can list all users (for getAllUsers)
+      allow list: if isAdmin();
+
+      // A user can update their own data
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+
+      // Only admin can delete
+      allow delete: if isAdmin();
+    }
+
+    match /userSubmissions/{document} {
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && isOwner(resource.data.userId));
+      allow write, create: if isAuthenticated() && 
+                      (isOwner(resource.data.userId) || isOwner(request.resource.data.userId));
+    }
+  
+    match /testAttempts/{document} {
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && isOwner(resource.data.userId));
+      allow write, create: if isAuthenticated() && 
+                      (isOwner(resource.data.userId) || isOwner(request.resource.data.userId));
+    }
+  }
+}

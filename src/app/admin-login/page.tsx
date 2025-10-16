@@ -1,3 +1,4 @@
+// page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -6,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Shield, Lock, Mail } from "lucide-react";
 import { auth } from "@/lib/Firebase";
 import { toast } from "react-toastify";
+import { setCookie } from "cookies-next"; // Import cookies-next
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -30,8 +32,10 @@ const AdminLogin = () => {
         email,
         password
       );
-      const token = await userCredential.user.getIdToken();
-      localStorage.setItem("adminToken", token);
+
+      // No need to manually handle the token. Firebase SDK manages the session.
+      // The middleware will handle redirects based on the session state.
+
       toast.success("Admin login successful!");
       router.push("/adminPanel");
     } catch (err: any) {
@@ -44,6 +48,7 @@ const AdminLogin = () => {
   };
 
   return (
+    // ... rest of the component is unchanged
     <div className="min-h-screen bg-gradient-to-br from-[#E0E9FF] via-[#F0E6FF] to-[#E6F7FF] flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="bg-[#F7F9FF] rounded-2xl p-8 shadow-lg border border-[#E4E8F5]">

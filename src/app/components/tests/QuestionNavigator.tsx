@@ -67,6 +67,7 @@ export const QuestionNavigator = ({
       <div className="relative">
         <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin scrollbar-track-white/10 scrollbar-thumb-blue-400/50 hover:scrollbar-thumb-blue-400/70">
           {questions.map((question, index) => {
+            console.log(questions, "questionssssss");
             const isCurrent = index === currentQuestionIndex;
             const hasAnswer = answers[question.id] !== undefined;
             const canNavigate = index <= currentQuestionIndex;
@@ -129,6 +130,7 @@ const Demo = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0);
   const [answers, setAnswers] = React.useState<Record<number, number>>({});
   const [questions, setQuestions] = React.useState<any[]>([]);
+  console.log(questions,"hjbhjhhh")
   React.useEffect(() => {
     const simulateFirebaseData = () => {
       const allQuestions = Array.from({ length: 100 }, (_, i) => ({

@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sessionStorage.clear();
 
       toast.success("Logout successful");
-      router.replace("/homes");
+      router.replace("/home");
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to logout");

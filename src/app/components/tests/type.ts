@@ -8,13 +8,11 @@ export interface Question {
 }
 export interface Test {
  id: string;
-  question: string;
   title: string;
   description: string;
   duration: number;
-  difficulty: string;
-  subject: string;
-  instructions?: string[];
+  difficulty: string;   // required
+  subject: string;      // required
   questions: {
     id: string;
     question: string;

@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
+import Papa from "papaparse";
 import {
   Plus,
   Edit2,
@@ -14,6 +15,14 @@ import {
   Clock,
   Award,
   TrendingUp,
+  FileQuestion,
+  Users,
+  CheckCircle,
+  Search,
+  Target,
+  BookOpen,
+  Activity,
+  Upload,
 } from "lucide-react";
 import {
   collection,
@@ -27,12 +36,27 @@ import {
   getDoc,
   Timestamp,
 } from "firebase/firestore";
-import { db, setDocByFirebase, auth, signOut } from "@/lib/Firebase";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import {
+  db,
+  setDocByFirebase,
+  auth,
+  signOut,
+  getAllUsers,
+  getUserTestResultsById,
+  isAdmin,
+  createAdmin,
+  getTestAnalytics,
+  storage,
+} from "@/lib/Firebase";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
 import AdminModal from "../components/modals/AdminModal";
 import { Select } from "antd";
+import TestAnalysis from "../components/TestAnalysis";
+import UserManagement from "../components/UserManagement";
+import TestManagement from "../components/TestManagement";
 
 interface Test {
   id: string;
@@ -81,6 +105,8 @@ interface DashboardStats {
   totalQuestions: number;
   activeTests: number;
   draftTests: number;
+  totalUsers: number;
+  totalSubmissions: number;
   testsChange: string;
   questionsChange: string;
   activeTestsChange: string;
@@ -91,9 +117,43 @@ interface DashboardStats {
   draftTestsChangeDirection: "up" | "down";
 }
 
+interface User {
+  id: string;
+  name: string;
+  displayName?: string;
+  email: string;
+  status?: "active" | "inactive";
+  joinDate: string;
+  completedTests: number;
+  totalTests: number;
+  avgScore: number;
+  createdAt?: any;
+  testResults?: TestResult[];
+}
+
+interface TestResult {
+  testName: string;
+  score: number;
+  date: string;
+  duration: string;
+  status: "completed" | "in-progress";
+}
+
+interface TestAnalytics {
+  totalAttempts: number;
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  passRate: number;
+}
+
+type Row = Record<string, string>;
+
 const calculateDashboardStats = (
   currentTests: Test[],
-  previousTests: Test[]
+  previousTests: Test[],
+  totalUsers: number,
+  totalSubmissions: number
 ): DashboardStats => {
   const totalTests = currentTests.length;
   const totalQuestions = currentTests.reduce(
@@ -121,6 +181,7 @@ const calculateDashboardStats = (
       acc + (Array.isArray(test.questions) ? test.questions.length : 0),
     0
   );
+
   const calculateChange = (
     current: number,
     previous: number
@@ -151,6 +212,8 @@ const calculateDashboardStats = (
     totalQuestions,
     activeTests,
     draftTests,
+    totalUsers,
+    totalSubmissions,
     testsChange: testsChange.change,
     questionsChange: questionsChange.change,
     activeTestsChange: activeTestsChange.change,
@@ -161,22 +224,19 @@ const calculateDashboardStats = (
     draftTestsChangeDirection: draftTestsChange.direction,
   };
 };
+
 const getTestsFromPeriod = async (
   startDate: Date,
   endDate: Date
-): Promise<Test[]> => {
+): Promise<Test[]> => { 
   try {
-    const startDateStr = startDate.toISOString().split("T")[0];
-    const endDateStr = endDate.toISOString().split("T")[0];
-
     const querySnapshot = await getDocs(collection(db, "tests"));
     const testsData = querySnapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
-    })) as Test[];
+      ...doc.data()     })) as Test[]; 
     return testsData.filter((test) => {
-      const testDate = test.created;
-      return testDate >= startDateStr && testDate <= endDateStr;
+      const testDate = new Date(test.created);
+      return testDate >= startDate && testDate <= endDate;
     });
   } catch (error) {
     console.error("Error getting tests from period:", error);
@@ -184,7 +244,7 @@ const getTestsFromPeriod = async (
   }
 };
 
-const AdminPanel = () => {
+const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [tests, setTests] = useState<Test[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -194,16 +254,33 @@ const AdminPanel = () => {
   const [showAddQuestion, setShowAddQuestion] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [analysisTestId, setAnalysisTestId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const [downloadURL, setDownloadURL] = useState<string | null>(null);
+  const [rows, setRows] = useState<Row[]>([]);
   const [pendingDeleteTestId, setPendingDeleteTestId] = useState<string | null>(
     null
   );
   const [isNavigationModalVisible, setIsNavigationModalVisible] =
     useState(false);
+  const [isAdminUser, setIsAdminUser] = useState<boolean>(false);
+  const [testAnalytics, setTestAnalytics] = useState<{
+    [key: string]: TestAnalytics;
+  }>({});
+  const [users, setUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [showExportUsers, setShowExportUsers] = useState<boolean>(false);
+  const [showUserAnalytics, setShowUserAnalytics] = useState<boolean>(false);
+
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalTests: 0,
     totalQuestions: 0,
     activeTests: 0,
     draftTests: 0,
+    totalUsers: 0,
+    totalSubmissions: 0,
     testsChange: "0%",
     questionsChange: "0%",
     activeTestsChange: "0%",
@@ -213,7 +290,7 @@ const AdminPanel = () => {
     activeTestsChangeDirection: "up",
     draftTestsChangeDirection: "up",
   });
-  console.log(dashboardStats, "kjlghuigiughuigh");
+
   const router = useRouter();
 
   const [newQuestion, setNewQuestion] = useState<NewQuestion>({
@@ -239,6 +316,168 @@ const AdminPanel = () => {
     loadQuestions();
   }, []);
 
+  useEffect(() => {
+    if (isAdminUser) {
+      loadTests();
+      loadQuestions();
+      if (activeTab === "users") {
+        loadUsers();
+      }
+    }
+  }, [activeTab, isAdminUser]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
+      toast.error("Please upload a valid CSV file.");
+      e.target.value = "";
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const safeName = file.name.replace(/\s+/g, "_");
+      const fileRef = ref(storage, `csv-uploads/${safeName}`);
+      await uploadBytes(fileRef, file, { contentType: "text/csv" });
+      const url = await getDownloadURL(fileRef);
+      setDownloadURL(url);
+      toast.success("CSV uploaded!");
+      const text = await file.text();
+      const parsed = Papa.parse<Row>(text, {
+        header: true,
+        skipEmptyLines: true,
+      });
+      setRows(parsed.data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload CSV.");
+    } finally {
+      setLoading(false);
+      e.target.value = "";
+    }
+  };
+
+  const fetchAndParseFromURL = async () => {
+    if (!downloadURL) return;
+    const res = await fetch(downloadURL);
+    const text = await res.text();
+    const parsed = Papa.parse<Row>(text, {
+      header: true,
+      skipEmptyLines: true,
+    });
+    setRows(parsed.data);
+  };
+
+  const loadUsers = async (): Promise<void> => {
+    try {
+      setLoading(true);
+
+      if (!isAdminUser) {
+        toast.error("Access denied: Admin privileges required");
+        return;
+      }
+
+      const usersData = await getAllUsers();
+
+      const processedUsers = await Promise.all(
+        usersData.map(async (user: any) => {
+          try {
+            const testResults = await getUserTestResultsById(user.id);
+            const completedTests = testResults.filter(
+              (r: any) => r.status === "completed"
+            ).length;
+            const avgScore =
+              testResults.length > 0
+                ? Math.round(
+                    testResults.reduce(
+                      (acc: number, r: any) => acc + (r.score || 0),
+                      0
+                    ) / testResults.length
+                  )
+                : 0;
+            const name =
+              user.displayName || user.name || user.email || "Unknown User";
+
+            return {
+              id: user.id || user.uid,
+              name: name,
+              email: user.email || "No email",
+              status: user.status || "active",
+              joinDate: user.createdAt
+                ? typeof user.createdAt.toDate === "function"
+                  ? user.createdAt.toDate().toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : new Date(user.createdAt).toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                : "Unknown",
+
+              completedTests,
+              totalTests: testResults.length,
+              avgScore,
+              testResults: testResults.map((r: any) => ({
+                testName: r.testName || r.testTitle || "Unknown Test",
+                score: r.score || 0,
+                date: r.completedAt
+                  ? r.completedAt.toDate
+                    ? new Date(r.completedAt.toDate()).toLocaleDateString()
+                    : new Date(r.completedAt).toLocaleDateString()
+                  : "Unknown",
+                duration: r.duration || r.timeTaken || "Unknown",
+                status: r.status || "completed",
+              })),
+            } as User;
+          } catch (error) {
+            console.error(`Error processing user ${user.id}:`, error);
+            return {
+              id: user.id,
+              name: user.name || user.displayName || "Unknown User",
+              email: user.email || "No email",
+              status: (user.status as "active" | "inactive") || "active",
+              joinDate: "Unknown",
+              completedTests: 0,
+              totalTests: 0,
+              avgScore: 0,
+              testResults: [],
+            } as User;
+          }
+        })
+      );
+
+      setUsers(processedUsers,);
+    } catch (error) {
+      console.error("Error loading users:", error);
+      toast.error("Failed to load users: " + (error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getAllUsers();
+        setUsers(data);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to fetch users");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
   const confirmLogout = () => {
     setIsModalVisible(false);
     handleLogout();
@@ -253,7 +492,7 @@ const AdminPanel = () => {
       Cookies.remove("token");
       await signOut(auth);
       toast.success("Logout successful");
-      router.replace("/homes");
+      router.replace("/home");
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to logout");
@@ -267,6 +506,7 @@ const AdminPanel = () => {
   const onClose = () => {
     setShowAddTest(false);
   };
+
   const loadTests = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -275,8 +515,26 @@ const AdminPanel = () => {
         id: doc.id,
         ...doc.data(),
       })) as Test[];
-
       setTests(testsData);
+      const analyticsData: { [key: string]: TestAnalytics } = {};
+      await Promise.all(
+        testsData.map(async (test) => {
+          try {
+            const analytics = await getTestAnalytics(test.id);
+            // Ensure data is received before setting
+            if (analytics) {
+              analyticsData[test.id] = analytics;
+            }
+          } catch (error) {
+            console.error(
+              `Error loading analytics for test ${test.id}:`,
+              error
+            );
+          }
+        })
+      );
+      setTestAnalytics(analyticsData);
+      console.log(analyticsData, "dataaaaaaaa");
       const today = new Date();
       const thirtyDaysAgo = new Date(today);
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -287,17 +545,41 @@ const AdminPanel = () => {
         sixtyDaysAgo,
         thirtyDaysAgo
       );
+
+      const totalUsers = users?.length || 0;
+      const totalSubmissions = Object.values(analyticsData).reduce(
+        (acc, analytics) => acc + analytics.totalAttempts,
+        0
+      );
+
       const stats = calculateDashboardStats(
         currentPeriodTests,
-        previousPeriodTests
+        previousPeriodTests,
+        totalUsers,
+        totalSubmissions
       );
       setDashboardStats(stats);
     } catch (error) {
       console.error("Error loading tests:", error);
+      toast.error("Failed to load tests");
     } finally {
       setLoading(false);
     }
   };
+  const memoizedFilteredUsers = useMemo(() => {
+    return (
+      users?.filter((user) => {
+        const matchesSearch =
+          user?.name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
+          user?.email?.toLowerCase().includes(searchTerm?.toLowerCase());
+
+        const matchesStatus =
+          filterStatus === "all" || user?.status === filterStatus;
+
+        return matchesSearch && matchesStatus;
+      }) || []
+    );
+  }, [users, searchTerm, filterStatus]);
 
   const loadQuestions = async (): Promise<void> => {
     try {
@@ -308,9 +590,9 @@ const AdminPanel = () => {
         ...doc.data(),
       })) as Question[];
       setQuestions(questionsData);
-      console.log(questionsData,"iuhjrfguihgei")
     } catch (error) {
       console.error("Error loading questions:", error);
+      toast.error("Failed to load questions");
     } finally {
       setLoading(false);
     }
@@ -336,10 +618,10 @@ const AdminPanel = () => {
         setSelectedTest(null);
       }
       await loadTests();
-
-      console.log("Test and associated questions deleted successfully!");
+      toast.success("Test deleted successfully!");
     } catch (error) {
       console.error("Error deleting test:", error);
+      toast.error("Failed to delete test");
     } finally {
       setLoading(false);
     }
@@ -363,6 +645,7 @@ const AdminPanel = () => {
       await updateDoc(testRef, {
         questions: arrayUnion(questionData),
       });
+
       const updatedTests = tests.map((t) =>
         t.id === selectedTest.id
           ? {
@@ -385,6 +668,7 @@ const AdminPanel = () => {
             : [questionData],
         };
       });
+
       setNewQuestion({
         question: "",
         options: ["", "", "", ""],
@@ -393,10 +677,10 @@ const AdminPanel = () => {
       });
       setShowAddQuestion(false);
       await loadTests();
-
-      console.log("Question added successfully!");
+      toast.success("Question added successfully!");
     } catch (error) {
       console.error("Error adding question:", error);
+      toast.error("Failed to add question");
     } finally {
       setLoading(false);
     }
@@ -440,10 +724,10 @@ const AdminPanel = () => {
 
       setEditingQuestion(null);
       await loadTests();
-
-      console.log("Question updated successfully!");
+      toast.success("Question updated successfully!");
     } catch (error) {
       console.error("Error updating question:", error);
+      toast.error("Failed to update question");
     } finally {
       setLoading(false);
     }
@@ -475,10 +759,10 @@ const AdminPanel = () => {
         )
       );
       await loadTests();
-
-      console.log("Question deleted successfully!");
+      toast.success("Question deleted successfully!");
     } catch (error: any) {
       console.error("Error deleting question:", error.message || error);
+      toast.error("Failed to delete question");
     } finally {
       setLoading(false);
     }
@@ -525,7 +809,7 @@ const AdminPanel = () => {
         description: newTest.description,
         instructions: newTest.instructions.filter((i) => i.trim() !== ""),
         created: new Date().toISOString().split("T")[0],
-        createdAt: Timestamp.now(), 
+        createdAt: Timestamp.now(),
       };
 
       const docId = await setDocByFirebase(testData);
@@ -548,14 +832,15 @@ const AdminPanel = () => {
       });
       setShowAddTest(false);
       await loadTests();
-
-      console.log("Test added successfully!");
+      toast.success("Test created successfully!");
     } catch (error) {
       console.error("Error adding test:", error);
+      toast.error("Failed to create test");
     } finally {
       setLoading(false);
     }
   };
+
   const dashboardStatsArray = [
     {
       title: "Total Tests",
@@ -568,10 +853,18 @@ const AdminPanel = () => {
     {
       title: "Total Questions",
       value: dashboardStats.totalQuestions,
-      icon: Edit2,
+      icon: FileQuestion,
       color: "green",
       change: dashboardStats.questionsChange,
       trend: dashboardStats.questionsChangeDirection,
+    },
+    {
+      title: "Total Users",
+      value: dashboardStats.totalUsers,
+      icon: Users,
+      color: "purple",
+      change: "+0%",
+      trend: "up" as const,
     },
     {
       title: "Active Tests",
@@ -581,18 +874,10 @@ const AdminPanel = () => {
       change: dashboardStats.activeTestsChange,
       trend: dashboardStats.activeTestsChangeDirection,
     },
-    {
-      title: "Draft Tests",
-      value: dashboardStats.draftTests,
-      icon: Clock,
-      color: "purple",
-      change: dashboardStats.draftTestsChange,
-      trend: dashboardStats.draftTestsChangeDirection,
-    },
   ];
 
   return (
-    <div className="h-[100%]  bg-slate-50 overflow-hidden">
+    <div className="h-[100%] bg-slate-50 overflow-hidden">
       {loading && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 shadow-2xl border border-slate-200">
@@ -605,8 +890,7 @@ const AdminPanel = () => {
       )}
 
       <div className="flex h-[100%]">
-        <div className=" bg-white border-r border-slate-200 shadow-sm flex flex-col justify-between h-screen fixed">
-          {/* Top Section */}
+        <div className="bg-white border-r border-slate-200 shadow-sm flex flex-col justify-between h-screen fixed">
           <div className="p-8">
             <div className="flex items-center space-x-4 mb-10">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
@@ -621,6 +905,7 @@ const AdminPanel = () => {
               {[
                 { id: "dashboard", label: "Dashboard", icon: BarChart3 },
                 { id: "tests", label: "Tests", icon: FileText },
+                { id: "users", label: "Users", icon: Users },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -675,7 +960,7 @@ const AdminPanel = () => {
             </button>
           </div>
         </div>
-        <div className="w-[calc(100vw-246px)] ml-auto">
+        <div className="flex-1 ml-64 overflow-y-auto">
           <div className="p-8">
             {activeTab === "dashboard" && (
               <div className="space-y-8">
@@ -733,690 +1018,207 @@ const AdminPanel = () => {
                     </div>
                   ))}
                 </div>
-
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm mb-6 max-h-[350px] flex flex-col">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
                   <div className="p-6 border-b border-slate-200">
                     <h2 className="text-xl font-bold text-slate-900 flex items-center">
-                      <Award className="mr-3 text-blue-600" />
-                      Recent Tests
+                      <Award className="mr-3 text-blue-600" /> Recent Tests
                     </h2>
                   </div>
-
-                  <div className="p-6 overflow-y-auto flex-1 space-y-4">
-                    {tests.map((test) => (
-                      <div
-                        key={test.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-slate-900">
-                              {test.title}
-                            </h3>
-                            <p className="text-slate-500 text-sm">
-                              {test.subject} • {test.created}
-                            </p>
-                          </div>
-                        </div>
-                        <span
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                            test.status?.toLowerCase() === "active"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {test.status.charAt(0).toUpperCase() +
-                            test.status.slice(1).toLowerCase()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "tests" && (
-              <div className="space-y-8">
-                {/* Header */}
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                      Test Management
-                    </h1>
-                    <p className="text-slate-600">
-                      Create, edit, and manage your tests
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowAddTest(true)}
-                    disabled={loading}
-                    className="bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium flex items-center transition-colors shadow-lg shadow-blue-500/25 disabled:opacity-50"
-                  >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Create Test
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Tests List */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-                    <div className="p-6 border-b border-slate-200">
-                      <h2 className="text-xl font-semibold text-slate-900 flex items-center">
-                        <FileText className="mr-3 text-blue-600" />
-                        All Tests ({tests.length})
-                      </h2>
-                    </div>
-                    <div className="p-6">
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {tests.map((test) => (
-                          <div
-                            key={test.id}
-                            className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                              selectedTest?.id === test.id
-                                ? "border-blue-200 bg-blue-50 shadow-sm"
-                                : "border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-slate-200"
-                            }`}
-                            onClick={() => setSelectedTest(test)}
-                          >
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3 mb-2">
-                                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                    <FileText className="w-4 h-4 text-white" />
-                                  </div>
-                                  <h3 className="font-semibold text-slate-900 truncate">
-                                    {test.title}
-                                  </h3>
-                                </div>
-                                <p className="text-sm text-slate-600 ml-11 mb-2">
-                                  {test.subject} •{" "}
-                                  {Array.isArray(test.questions)
-                                    ? test.questions.length
-                                    : typeof test.questions === "number"
-                                    ? test.questions
-                                    : 0}{" "}
-                                  questions
-                                </p>
-                                <div className="ml-11 flex items-center space-x-3">
-                                  <span className="text-xs text-slate-500">
-                                    {test.created}
-                                  </span>
-                                  <span
-                                    className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                      test.status?.toLowerCase() === "active"
-                                        ? "bg-emerald-100 text-emerald-800"
-                                        : "bg-amber-100 text-amber-800"
-                                    }`}
-                                  >
-                                    {test.status.charAt(0).toUpperCase() +
-                                      test.status.slice(1).toLowerCase()}
-                                  </span>
-                                </div>
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPendingDeleteTestId(test.id);
-                                  setIsNavigationModalVisible(true);
-                                }}
-                                disabled={loading}
-                                className="text-red-400  cursor-pointer hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Questions List */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-                    <div className="p-6 border-b border-slate-200">
-                      <div className="flex justify-between items-center">
-                        <h2 className="text-xl  font-semibold text-slate-900 flex items-center">
-                          <Edit2 className="mr-3  text-blue-600" />
-                          {selectedTest
-                            ? `Questions for "${selectedTest.title}"`
-                            : "Select a test to view questions"}
-                        </h2>
-                        {selectedTest && (
-                          <button
-                            onClick={() => setShowAddQuestion(true)}
-                            disabled={loading}
-                            className="bg-emerald-600 cursor-pointer hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center transition-colors shadow-sm disabled:opacity-50"
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Add Question
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="p-6">
-                      <div className="space-y-4 max-h-96 overflow-y-auto">
-                        {filteredQuestions.map((question, index) => {
-                          return (
-                            <div
-                              key={question.id}
-                              className="p-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-colors"
-                            >
-                              <div className="flex justify-between items-start mb-3">
-                                <div className="flex items-center space-x-2">
-                                  <span className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                                    {index + 1}
-                                  </span>
-                                  <h4 className="font-medium text-sm text-slate-600">
-                                    Question {index + 1}
-                                  </h4>
-                                </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={() => handleEditQuestion(question)}
-                                    disabled={loading}
-                                    className="text-blue-400 cursor-pointer hover:text-blue-600 p-2 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-50"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteQuestion(question.id)
-                                    }
-                                    disabled={loading}
-                                    className="text-red-400 cursor-pointer  hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </div>
-                              <p className="text-sm mb-3 text-slate-900 font-medium">
-                                {question.question}
-                              </p>
-                              <div className="space-y-2">
-                                {question.options?.map((option, optIndex) => (
-                                  <div
-                                    key={optIndex}
-                                    className={`text-xs p-3 rounded-lg border transition-all ${
-                                      optIndex === question.correctAnswer
-                                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                        : "bg-white text-slate-600 border-slate-200"
-                                    }`}
-                                  >
-                                    <span className="font-semibold">
-                                      {String.fromCharCode(65 + optIndex)}.
-                                    </span>{" "}
-                                    {option}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Add Test Modal */}
-            {showAddTest && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200">
-                  <div className="p-6 border-b border-slate-200">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                          <Plus className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-slate-900">
-                            Create New Test
-                          </h3>
-                          <p className="text-slate-600 text-sm">
-                            Add a comprehensive test to your library
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={onClose}
-                        className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-all"
-                      >
-                        <X className="w-5 cursor-pointer h-5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 max-h-[60vh] overflow-y-auto">
+                  <div className="p-6 max-h-96 overflow-y-auto">
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Test Title
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="Enter test title"
-                            value={newTest.title}
-                            onChange={(e) =>
-                              setNewTest({ ...newTest, title: e.target.value })
-                            }
-                            className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Subject
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="e.g., JavaScript, React, Node.js"
-                            value={newTest.subject}
-                            onChange={(e) =>
-                              setNewTest({
-                                ...newTest,
-                                subject: e.target.value,
-                              })
-                            }
-                            className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Duration (mins)
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="60"
-                            value={newTest.duration}
-                            onChange={(e) =>
-                              setNewTest({
-                                ...newTest,
-                                duration: e.target.value,
-                              })
-                            }
-                            className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Questions
-                          </label>
-                          <input
-                            type="number"
-                            placeholder="10"
-                            value={newTest.questions}
-                            onChange={(e) =>
-                              setNewTest({
-                                ...newTest,
-                                questions: e.target.value,
-                              })
-                            }
-                            className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Difficulty
-                          </label>
-                          <Select
-                            value={newTest.difficulty || undefined}
-                            allowClear
-                            onChange={(value) =>
-                              setNewTest({ ...newTest, difficulty: value })
-                            }
-                            className="custom-select text-base"
-                            style={{ width: "190px", height: "48px" }}
-                            placeholder="Select difficulty"
-                            options={[
-                              { value: "Beginner", label: "Beginner" },
-                              { value: "Intermediate", label: "Intermediate" },
-                              { value: "Advanced", label: "Advanced" },
-                            ]}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Status
-                        </label>
-                        <Select
-                          value={newTest.status || undefined}
-                          allowClear
-                          onChange={(value) =>
-                            setNewTest({ ...newTest, status: value })
-                          }
-                          className="custom-select-advance text-base"
-                          style={{ width: "100%", height: "48px" }}
-                          placeholder="Select status"
-                          options={[
-                            { value: "Draft", label: "Draft" },
-                            { value: "Active", label: "Active" },
-                          ]}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Description
-                        </label>
-                        <textarea
-                          placeholder="Test description..."
-                          value={newTest.description}
-                          onChange={(e) =>
-                            setNewTest({
-                              ...newTest,
-                              description: e.target.value,
-                            })
-                          }
-                          className="w-full p-3 border border-slate-300 rounded-xl bg-white text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24 resize-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-3">
-                          Instructions
-                        </label>
-                        {newTest.instructions.map((inst, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-3 mb-3"
-                          >
-                            <div className="flex-1">
-                              <input
-                                type="text"
-                                value={inst}
-                                onChange={(e) =>
-                                  handleInstructionChange(idx, e.target.value)
-                                }
-                                className="w-full p-3 rounded-xl bg-white border border-slate-300 text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder={`Instruction ${idx + 1}`}
-                              />
+                      {tests.slice(0, 5).map((test) => (
+                        <div
+                          key={test.id}
+                          className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                              <FileText className="w-5 h-5 text-white" />
                             </div>
-                            {newTest.instructions.length > 1 && (
-                              <button
-                                onClick={() => removeInstruction(idx)}
-                                className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all"
-                              >
-                                <X className="w-4 cursor-pointer h-4" />
-                              </button>
+                            <div>
+                              <h3 className="font-semibold text-slate-900">
+                                {test.title}
+                              </h3>
+                              <p className="text-slate-500 text-sm">
+                                {test.subject} • {test.created} •{" "}
+                                {Array.isArray(test.questions)
+                                  ? test.questions.length
+                                  : typeof test.questions === "number"
+                                  ? test.questions
+                                  : 0}{" "}
+                                questions
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <span
+                              className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                                test.status?.toLowerCase() === "active"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {test.status.charAt(0).toUpperCase() +
+                                test.status.slice(1).toLowerCase()}
+                            </span>
+                            {testAnalytics[test.id] && (
+                              console.log(testAnalytics[test.id].averageScore,"vhjhvjhvhj"),
+                              <div className="text-xs text-slate-600">
+                                {testAnalytics[test.id].totalAttempts} attempts
+                                •{" "}
+                                {testAnalytics[test.id].averageScore.toFixed(1)}{" "}
+                                avg % avg
+                              </div>
                             )}
                           </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={addInstruction}
-                          className="text-blue-600 cursor-pointer hover:text-blue-700 text-sm font-medium flex items-center hover:underline"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Add Instruction
-                        </button>
-                      </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-
-                  <div className="p-6 border-t border-slate-200">
-                    <div className="flex space-x-4">
-                      <button
-                        onClick={handleAddTest}
-                        disabled={false}
-                        className="flex-1 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center shadow-sm"
-                      >
-                        <Save className="w-5 h-5 mr-2" />
-                        Create Test
-                      </button>
-                      <button
-                        onClick={onClose}
-                        className="px-6 py-3 cursor-pointer bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors border border-slate-200"
-                      >
-                        Cancel
-                      </button>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                      <Activity className="mr-2 text-blue-600" /> Test
+                      Performance Overview
+                    </h3>
+                    <div className="space-y-4">
+                      {tests.slice(0, 3).map((test) => {
+                        const analytics = testAnalytics[test.id];
+                        return (
+                          <div
+                            key={test.id}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium text-slate-900 truncate">
+                                {test.title}
+                              </p>
+                              <p className="text-sm text-slate-500">
+                                {test.subject}
+                              </p>
+                            </div>
+                            {analytics && (
+                              <div className="text-right">
+                                <p className="text-sm font-medium text-slate-900">
+                                  {Math.round(analytics.averageScore)}% avg
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {analytics.totalAttempts} attempts
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
+                      <Target className="mr-2 text-green-600" /> System Health
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600">Active Tests</span>
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                          <span className="font-medium">
+                            {dashboardStats.activeTests}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600">Draft Tests</span>
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                          <span className="font-medium">
+                            {dashboardStats.draftTests}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600">Total Users</span>
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                          <span className="font-medium">
+                            {dashboardStats.totalUsers}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-600">
+                          Total Submissions
+                        </span>
+                        <div className="flex items-center">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                          <span className="font-medium">
+                            {dashboardStats.totalSubmissions}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
-
-            {showAddQuestion && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200">
-                  <div className="p-4 border-b border-slate-200">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-xl flex items-center justify-center">
-                          <Plus className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-900">
-                            Add New Question
-                          </h3>
-                          <p className="text-slate-600 text-sm">
-                            Create a multiple choice question
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setShowAddQuestion(false)}
-                        className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-all"
-                      >
-                        <X className="w-5 cursor-pointer h-5" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-4 max-h-[60vh] overflow-y-auto">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Question
-                        </label>
-                        <textarea
-                          placeholder="Enter your question here..."
-                          value={newQuestion.question}
-                          onChange={(e) =>
-                            setNewQuestion({
-                              ...newQuestion,
-                              question: e.target.value,
-                            })
-                          }
-                          className="w-full p-3 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-20 resize-none bg-white"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Answer Options
-                        </label>
-                        <div className="space-y-2">
-                          {newQuestion.options.map((option, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center space-x-3"
-                            >
-                              <input
-                                type="radio"
-                                name="correctAnswer"
-                                checked={newQuestion.correctAnswer === index}
-                                onChange={() => onSelect(option, index)}
-                                className="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
-                              />
-                              <span className="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                                {String.fromCharCode(65 + index)}
-                              </span>
-                              <input
-                                type="text"
-                                placeholder={`Option ${String.fromCharCode(
-                                  65 + index
-                                )}`}
-                                value={option}
-                                onChange={(e) => {
-                                  const newOptions = [...newQuestion.options];
-                                  newOptions[index] = e.target.value;
-                                  setNewQuestion({
-                                    ...newQuestion,
-                                    options: newOptions,
-                                  });
-                                }}
-                                className="flex-1 p-2.5 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-xs text-slate-500 mt-2">
-                          Select the radio button next to the correct answer
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="p-4 border-t border-slate-200">
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={handleAddQuestion}
-                        disabled={false}
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center shadow-sm"
-                      >
-                        <Save className="w-5 h-5 mr-2" />
-                        Save Question
-                      </button>
-                      <button
-                        onClick={() => setShowAddQuestion(false)}
-                        className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors border border-slate-200"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {activeTab === "tests" && (
+              <TestManagement
+                tests={tests}
+                selectedTest={selectedTest}
+                setSelectedTest={setSelectedTest}
+                handleDeleteTest={handleDeleteTest}
+                handleAddTest={handleAddTest}
+                loading={loading}
+                showAddTest={showAddTest}
+                setShowAddTest={setShowAddTest}
+                onClose={onClose}
+                newTest={newTest}
+                setNewTest={setNewTest}
+                handleInstructionChange={handleInstructionChange}
+                addInstruction={addInstruction}
+                removeInstruction={removeInstruction}
+                showAddQuestion={showAddQuestion}
+                setShowAddQuestion={setShowAddQuestion}
+                newQuestion={newQuestion}
+                setNewQuestion={setNewQuestion}
+                onSelect={onSelect}
+                handleAddQuestion={handleAddQuestion}
+                handleEditQuestion={handleEditQuestion}
+                handleSaveQuestion={handleSaveQuestion}
+                handleDeleteQuestion={handleDeleteQuestion}
+                filteredQuestions={filteredQuestions}
+                editingQuestion={editingQuestion}
+                setEditingQuestion={setEditingQuestion}
+                setAnalysisTestId={setAnalysisTestId}
+                analysisTestId={analysisTestId}
+                testAnalytics={testAnalytics}
+                pendingDeleteTestId={pendingDeleteTestId}
+                setPendingDeleteTestId={setPendingDeleteTestId}
+                isNavigationModalVisible={isNavigationModalVisible}
+                setIsNavigationModalVisible={setIsNavigationModalVisible}
+                users={users}
+                handleFileUpload={handleFileUpload}
+              />
             )}
-            {editingQuestion && (
-              <div className="fixed inset-0  bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-slate-200">
-                  <div className="p-4 border-b border-slate-200">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-9 h-9 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
-                          <Edit className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-900">
-                            Edit Question
-                          </h3>
-                          <p className="text-slate-600 text-sm">
-                            Modify question details
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setEditingQuestion(null)}
-                        className="text-slate-400  hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-all"
-                      >
-                        <X className="w-5 cursor-pointer h-5" />
-                      </button>
-                    </div>
-                  </div>
 
-                  {/* Content */}
-                  <div className="p-4 max-h-[60vh] overflow-y-auto">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Question
-                        </label>
-                        <textarea
-                          value={editingQuestion.question}
-                          onChange={(e) =>
-                            setEditingQuestion({
-                              ...editingQuestion,
-                              question: e.target.value,
-                            })
-                          }
-                          className="w-full p-3 border cursor-pointer border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-20 resize-none bg-white"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Answer Options
-                        </label>
-                        <div className="space-y-2">
-                          {editingQuestion.options.map((option, index) => (
-                            <div
-                              key={index}
-                              className="flex  items-center space-x-3"
-                            >
-                              <input
-                                type="radio"
-                                name="editCorrectAnswer"
-                                checked={
-                                  editingQuestion.correctAnswer === index
-                                }
-                                onChange={() =>
-                                  setEditingQuestion({
-                                    ...editingQuestion,
-                                    correctAnswer: index,
-                                  })
-                                }
-                                className="w-4 cursor-pointer h-4 text-blue-600 focus:ring-blue-500 focus:ring-2"
-                              />
-                              <span className="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                                {String.fromCharCode(65 + index)}
-                              </span>
-                              <input
-                                type="text"
-                                value={option}
-                                onChange={(e) => {
-                                  const newOptions = [
-                                    ...editingQuestion.options,
-                                  ];
-                                  newOptions[index] = e.target.value;
-                                  setEditingQuestion({
-                                    ...editingQuestion,
-                                    options: newOptions,
-                                  });
-                                }}
-                                className="flex-1 p-2.5 border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-xs text-slate-500 mt-2">
-                          Select the radio button next to the correct answer
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="p-4 border-t border-slate-200">
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={handleSaveQuestion}
-                        disabled={loading}
-                        className="flex-1 bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center shadow-sm"
-                      >
-                        <Save className="w-5 h-5 mr-2" />
-                        Save Changes
-                      </button>
-                      <button
-                        onClick={() => setEditingQuestion(null)}
-                        className="px-5 py-2.5 cursor-pointer bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors border border-slate-200"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {activeTab === "users" && (
+              <UserManagement
+                users={users}
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                loading={loading}
+                loadUsers={loadUsers}
+                handleFileUpload={handleFileUpload}
+                showExportUsers={showExportUsers}
+                setShowExportUsers={setShowExportUsers}
+                showUserAnalytics={showUserAnalytics}
+                setShowUserAnalytics={setShowUserAnalytics}
+                filteredUsers={memoizedFilteredUsers}
+                selectedUser={selectedUser}
+                setSelectedUser={setSelectedUser}
+              />
             )}
             {isModalVisible && (
               <AdminModal
@@ -1427,7 +1229,6 @@ const AdminPanel = () => {
                 onCancel={cancelLogout}
               />
             )}
-
             {isNavigationModalVisible && (
               <AdminModal
                 title="Delete Test"
