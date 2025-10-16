@@ -339,3 +339,27 @@ body {
   font-weight: 500;
   color: #0f172a;
 }
+.ant-select-selector{
+  background-color: #653597 !important;
+}
+/* For dropdown options */
+.custom-select .ant-select-item {
+  color: white !important;
+}
+.ant-select-selection-item{
+  color: white !important;
+  font-weight: 400 !important;}
+  
+.ant-select-single .ant-select-selector .ant-select-selection-item {
+  color: white !important;
+}
+
+/* Placeholder text */
+.ant-select-single .ant-select-selector .ant-select-selection-placeholder {
+  color: white !important;
+}
+/* Only hover state */
+.ant-select-dropdown .ant-select-item-option:hover {
+  background-color: #653597 !important;
+  color: #653597 !important;
+}
