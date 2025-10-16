@@ -272,7 +272,7 @@ export default function TestDashboard() {
 
     // Validate test has questions
     if (!test.questions || test.questions.length === 0) {
-      setError(`This test has no questions available. Please contact support.`);
+      // setError(`This test has no questions available. Please contact support.`);
       return;
     }
 
