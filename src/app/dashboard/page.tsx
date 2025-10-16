@@ -139,7 +139,19 @@ export default function TestDashboard() {
       console.log("📊 Fetching user test results...");
       const results = await getUserTestResults();
       console.log(`✅ Received ${results.length} test results`);
-      setTestResults(results);
+      // Ensure each result has userAnswers, totalQuestions, and percentage
+      const mappedResults = results.map((result: any) => ({
+        ...result,
+        userAnswers: result.userAnswers ?? [],
+        totalQuestions: result.totalQuestions ?? 0,
+        percentage: result.percentage ?? (
+          result.totalQuestions && result.score != null
+            ? Math.round((result.score / result.totalQuestions) * 100)
+            : 0
+        ),
+      }));
+      setTestResults(mappedResults);
+      // setTestResults(results);
     } catch (error) {
       console.error("❌ Failed to fetch test results:", error);
       // Don't throw - allow app to continue without results

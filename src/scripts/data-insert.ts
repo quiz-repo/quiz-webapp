@@ -164,7 +164,12 @@ async function executeDataInsert() {
     console.log("Starting data insertion process...");
     setTimeout(async () => {
       try {
-        const dummyData: TestDetail[] = testdata();
+        //  const dummyData: TestDetail[] = testdata();
+        const dummyData: TestDetail[] = testdata().map((item: any) => ({
+          id: item.testId,
+          questions: item.questions,
+          ...item,
+        }));
         console.log(`📊 Processing ${dummyData.length} test documents...`);
         
         if (dummyData.length === 0) {

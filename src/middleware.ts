@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
 import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
-import jwt from "jsonwebtoken";
+// import jwt from "jsonwebtoken";
 
 // It's a good practice to initialize the Firebase Admin SDK once.
 const firebaseConfig = {
@@ -63,8 +63,6 @@ export async function middleware(request: NextRequest) {
     if (routeType === "admin" && !isAdmin) {
       return NextResponse.redirect(new URL("/home", request.url));
     }
-    
-    // If a non-admin user tries to access a protected route, allow it.
     if (routeType === "protected" && !isAdmin) {
       return NextResponse.next();
     }
