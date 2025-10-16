@@ -108,7 +108,7 @@ interface User {
   name: string;
   displayName?: string;
   email: string;
-  status?: "active" | "inactive";
+  status: "active" | "inactive";
   joinDate: string;
   completedTests: number;
   totalTests: number;
@@ -1187,7 +1187,7 @@ const AdminPanel: React.FC = () => {
               />
             )}
 
-            {activeTab === "users" && (
+            {/* {activeTab === "users" && (
               <UserManagement
                 users={users}
                 searchTerm={searchTerm}
@@ -1205,7 +1205,7 @@ const AdminPanel: React.FC = () => {
                 selectedUser={selectedUser}
                 setSelectedUser={setSelectedUser}
               />
-            )}
+            )} */}
             {isModalVisible && (
               <AdminModal
                 title="Confirm Logout"

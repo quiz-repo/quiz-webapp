@@ -7,12 +7,14 @@ export interface Question {
   [key: string]: any;
 }
 export interface Test {
- id: string;
+  id: string;
   title: string;
   description: string;
   duration: number;
-  difficulty: string;   // required
-  subject: string;      // required
+  difficulty: string;
+  subject: string;
+  instructions?: string[]; 
+   totalQuestions?: number;
   questions: {
     id: string;
     question: string;
