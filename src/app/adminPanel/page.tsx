@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Papa from "papaparse";
+import { Result } from "antd";
 import {
   LogOutIcon,
   BarChart3,
@@ -11,7 +12,6 @@ import {
   FileQuestion,
   Users,
   Target,
-
   Activity,
 } from "lucide-react";
 import {
@@ -43,6 +43,7 @@ import { toast } from "react-toastify";
 import AdminModal from "../components/modals/AdminModal";
 import UserManagement from "../components/UserManagement";
 import TestManagement from "../components/TestManagement";
+import ResultsManagement from "../resultsManagment/page";
 
 interface Test {
   id: string;
@@ -214,12 +215,13 @@ const calculateDashboardStats = (
 const getTestsFromPeriod = async (
   startDate: Date,
   endDate: Date
-): Promise<Test[]> => { 
+): Promise<Test[]> => {
   try {
     const querySnapshot = await getDocs(collection(db, "tests"));
     const testsData = querySnapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data()     })) as Test[]; 
+      ...doc.data(),
+    })) as Test[];
     return testsData.filter((test) => {
       const testDate = new Date(test.created);
       return testDate >= startDate && testDate <= endDate;
@@ -276,6 +278,7 @@ const AdminPanel: React.FC = () => {
     activeTestsChangeDirection: "up",
     draftTestsChangeDirection: "up",
   });
+  console.log(dashboardStats, "dashboardStatsttt");
 
   const router = useRouter();
 
@@ -344,16 +347,16 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  const fetchAndParseFromURL = async () => {
-    if (!downloadURL) return;
-    const res = await fetch(downloadURL);
-    const text = await res.text();
-    const parsed = Papa.parse<Row>(text, {
-      header: true,
-      skipEmptyLines: true,
-    });
-    setRows(parsed.data);
-  };
+  // const fetchAndParseFromURL = async () => {
+  //   if (!downloadURL) return;
+  //   const res = await fetch(downloadURL);
+  //   const text = await res.text();
+  //   const parsed = Papa.parse<Row>(text, {
+  //     header: true,
+  //     skipEmptyLines: true,
+  //   });
+  //   setRows(parsed.data);
+  // };
 
   const loadUsers = async (): Promise<void> => {
     try {
@@ -440,7 +443,7 @@ const AdminPanel: React.FC = () => {
         })
       );
 
-      setUsers(processedUsers,);
+      setUsers(processedUsers);
     } catch (error) {
       console.error("Error loading users:", error);
       toast.error("Failed to load users: " + (error as Error).message);
@@ -520,7 +523,7 @@ const AdminPanel: React.FC = () => {
         })
       );
       setTestAnalytics(analyticsData);
-      console.log(analyticsData, "dataaaaaaaa");
+      // console.log(analyticsData, "dataaaaaaaa");
       const today = new Date();
       const thirtyDaysAgo = new Date(today);
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -533,6 +536,7 @@ const AdminPanel: React.FC = () => {
       );
 
       const totalUsers = users?.length || 0;
+      console.log(totalUsers, "totalusersss");
       const totalSubmissions = Object.values(analyticsData).reduce(
         (acc, analytics) => acc + analytics.totalAttempts,
         0
@@ -545,6 +549,7 @@ const AdminPanel: React.FC = () => {
         totalSubmissions
       );
       setDashboardStats(stats);
+      console.log(stats, "statsss");
     } catch (error) {
       console.error("Error loading tests:", error);
       toast.error("Failed to load tests");
@@ -826,7 +831,9 @@ const AdminPanel: React.FC = () => {
       setLoading(false);
     }
   };
-
+  console.log("Total Questions Data:", {
+    totalQuestions: dashboardStats.totalQuestions,
+  });
   const dashboardStatsArray = [
     {
       title: "Total Tests",
@@ -846,7 +853,7 @@ const AdminPanel: React.FC = () => {
     },
     {
       title: "Total Users",
-      value: dashboardStats.totalUsers,
+      value: dashboardStats?.totalUsers,
       icon: Users,
       color: "purple",
       change: "+0%",
@@ -892,6 +899,7 @@ const AdminPanel: React.FC = () => {
                 { id: "dashboard", label: "Dashboard", icon: BarChart3 },
                 { id: "tests", label: "Tests", icon: FileText },
                 { id: "users", label: "Users", icon: Users },
+                { id: "results", label: "Result", icon: Users },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -902,16 +910,28 @@ const AdminPanel: React.FC = () => {
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <item.icon
-                    className={`w-5 h-5 ${
+                  <span
+                    className={`flex items-center justify-center ${
                       activeTab === item.id ? "text-blue-600" : "text-slate-400"
                     }`}
-                  />
+                  >
+                    <item.icon
+                      className={`${
+                        item.id === "results"
+                          ? "text-[20px] leading-none" // Fix AntD icon sizing
+                          : "w-5 h-5"
+                      }`}
+                      style={{
+                        fontSize: item.id === "results" ? 20 : undefined,
+                      }}
+                    />
+                  </span>
                   <span className="font-medium">{item.label}</span>
                 </button>
               ))}
             </nav>
           </div>
+
           <div className="p-8">
             <button
               onClick={() => setIsModalVisible(true)}
@@ -959,51 +979,57 @@ const AdminPanel: React.FC = () => {
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {dashboardStatsArray.map((stat, index) => (
-                    <div
-                      key={stat.title}
-                      className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex items-center justify-between mb-4">
-                        <div
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            stat.color === "blue"
-                              ? "bg-blue-50 text-blue-600"
-                              : stat.color === "green"
-                              ? "bg-emerald-50 text-emerald-600"
-                              : stat.color === "yellow"
-                              ? "bg-amber-50 text-amber-600"
-                              : "bg-purple-50 text-purple-600"
-                          }`}
-                        >
-                          <stat.icon className="w-6 h-6" />
-                        </div>
-                        <div
-                          className={`flex items-center text-sm font-medium ${
-                            stat.trend === "up"
-                              ? "text-emerald-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          <TrendingUp
-                            className={`w-4 h-4 mr-1 ${
-                              stat.trend === "down" ? "rotate-180" : ""
+                  {dashboardStatsArray.map((stat, index) => {
+                    console.log("Stat Item:", stat); //
+
+                    return (
+                      <div
+                        key={stat.title}
+                        className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div
+                            className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                              stat.color === "blue"
+                                ? "bg-blue-50 text-blue-600"
+                                : stat.color === "green"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : stat.color === "yellow"
+                                ? "bg-amber-50 text-amber-600"
+                                : "bg-purple-50 text-purple-600"
                             }`}
-                          />
-                          {stat.change}
+                          >
+                            <stat.icon className="w-6 h-6" />
+                          </div>
+                          <div
+                            className={`flex items-center text-sm font-medium ${
+                              stat.trend === "up"
+                                ? "text-emerald-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            <TrendingUp
+                              className={`w-4 h-4 mr-1 ${
+                                stat.trend === "down" ? "rotate-180" : ""
+                              }`}
+                            />
+                            {stat.change}
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-3xl font-bold text-slate-900 mb-1">
+                            {stat.value}
+                          </p>
+                          <p className="text-slate-500 font-medium">
+                            {stat.title}
+                          </p>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-3xl font-bold text-slate-900 mb-1">
-                          {stat.value}
-                        </p>
-                        <p className="text-slate-500 font-medium">
-                          {stat.title}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
                   <div className="p-6 border-b border-slate-200">
                     <h2 className="text-xl font-bold text-slate-900 flex items-center">
@@ -1047,15 +1073,21 @@ const AdminPanel: React.FC = () => {
                               {test.status.charAt(0).toUpperCase() +
                                 test.status.slice(1).toLowerCase()}
                             </span>
-                            {testAnalytics[test.id] && (
-                              console.log(testAnalytics[test.id].averageScore,"vhjhvjhvhj"),
-                              <div className="text-xs text-slate-600">
-                                {testAnalytics[test.id].totalAttempts} attempts
-                                •{" "}
-                                {testAnalytics[test.id].averageScore.toFixed(1)}{" "}
-                                avg % avg
-                              </div>
-                            )}
+                            {testAnalytics[test.id] &&
+                              (console.log(
+                                testAnalytics[test.id].averageScore,
+                                "vhjhvjhvhj"
+                              ),
+                              (
+                                <div className="text-xs text-slate-600">
+                                  {testAnalytics[test.id].totalAttempts}{" "}
+                                  attempts •{" "}
+                                  {testAnalytics[test.id].averageScore.toFixed(
+                                    1
+                                  )}{" "}
+                                  avg % avg
+                                </div>
+                              ))}
                           </div>
                         </div>
                       ))}
@@ -1147,6 +1179,7 @@ const AdminPanel: React.FC = () => {
                 </div>
               </div>
             )}
+
             {activeTab === "tests" && (
               <TestManagement
                 tests={tests}
@@ -1187,7 +1220,7 @@ const AdminPanel: React.FC = () => {
               />
             )}
 
-            {/* {activeTab === "users" && (
+            {activeTab === "users" && (
               <UserManagement
                 users={users}
                 searchTerm={searchTerm}
@@ -1205,7 +1238,16 @@ const AdminPanel: React.FC = () => {
                 selectedUser={selectedUser}
                 setSelectedUser={setSelectedUser}
               />
-            )} */}
+            )}
+
+            {activeTab === "results" && (
+              <ResultsManagement
+                users={users}
+                tests={tests}
+                loading={loading}
+              />
+            )}
+
             {isModalVisible && (
               <AdminModal
                 title="Confirm Logout"
@@ -1215,6 +1257,7 @@ const AdminPanel: React.FC = () => {
                 onCancel={cancelLogout}
               />
             )}
+
             {isNavigationModalVisible && (
               <AdminModal
                 title="Delete Test"

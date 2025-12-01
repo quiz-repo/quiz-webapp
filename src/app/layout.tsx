@@ -6,6 +6,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { RouteProtector } from "./RouteProtector";
 
+import { ConfigProvider } from "antd"; // ✅ Add this
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -22,10 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>
-          <RouteProtector>{children}</RouteProtector>
-          <ToastContainer />
-        </AuthProvider>
+        <ConfigProvider wave={{ disabled: true }}>
+          <AuthProvider>
+            <RouteProtector>{children}</RouteProtector>
+            <ToastContainer />
+          </AuthProvider>
+        </ConfigProvider>
       </body>
     </html>
   );

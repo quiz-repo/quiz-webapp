@@ -19,7 +19,7 @@ export const DashboardView = ({
   onShowResults,
 }: DashboardViewProps) => {
   const [totalUsers, setTotalUsers] = useState<number>(0);
- 
+ console.log(totalUsers, "totalUsers");
   useEffect(() => {
     const fetchUsers = async () => {
       const count = await getTotalUsers();
@@ -30,7 +30,7 @@ export const DashboardView = ({
   }, []);
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className=" select-none w-full overflow-x-hidden">
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
         <StatsCard

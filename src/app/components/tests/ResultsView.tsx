@@ -15,9 +15,9 @@ export const ResultsView = ({
   onLogout,
 }: ResultsViewProps) => {
 
-  const totalQuestions = 50; 
+  const totalQuestions = result.totalQuestions || test.questions.length;
   const percentage = Math.round((result.score / totalQuestions) * 100);
-
+console.log(result,"ujjjnu")
   let performance = "";
   let performanceColor = "";
   console.log(result);

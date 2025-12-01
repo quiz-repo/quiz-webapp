@@ -70,7 +70,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
     setIsModalOpen(false);
     setSelectedUser(null);
   };
-  
+
   const formatDate = (date: any) => {
     if (!date) return "Unknown";
     try {
@@ -132,7 +132,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                 </button>
               )}
             </div>
-            <Select
+            {/* <Select
               value={filterStatus}
               onChange={(value) => setFilterStatus(value)}
               className="w-48"
@@ -141,7 +141,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                 { value: "active", label: "Active" },
                 { value: "inactive", label: "Inactive" },
               ]}
-            />
+            /> */}
           </div>
 
           {/* Users Table */}
@@ -150,6 +150,9 @@ const UserManagement: React.FC<UserManagementProps> = ({
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-100 sticky top-0 z-10">
                   <tr>
+                      {/* <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                      S.No
+                    </th> */}
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Name
                     </th>
@@ -159,9 +162,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Join Date
                     </th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                      Avg. Score
-                    </th>
+              
                     <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Action
                     </th>
@@ -169,66 +170,77 @@ const UserManagement: React.FC<UserManagementProps> = ({
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {filteredUsers?.length > 0 ? (
-                    filteredUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="transition-all duration-200 hover:bg-slate-50"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              {user.photoURL ? (
-                                <Image
-                                  src={user.photoURL}
-                                  alt={user.name || "User"}
-                                  width={40}
-                                  height={40}
-                                  className="rounded-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-lg">
-                                  {user?.name?.charAt(0) || "?"}
+                    filteredUsers.map((user) => {
+                      console.log("USER DETAILS:", user);
+
+                      // Correct Name Logic
+                      const fullName =
+                        user.displayName ||
+                        `${user.firstName || ""} ${
+                          user.lastName || ""
+                        }`.trim() ||
+                        "N/A";
+
+                      return (
+                        <tr
+                          key={user.id}
+                          className="transition-all duration-200 hover:bg-slate-50"
+                        >
+                          {/* NAME + ICON */}
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-10 w-10">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-lg capitalize">
+                                  {fullName.charAt(0)}
                                 </div>
-                              )}
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-slate-900">
-                                {user.name || "N/A"}
+                              </div>
+
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-slate-900 capitalize">
+                                  {fullName}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                          {user.email}
-                        </td>
+                          </td>
 
-                        {/* Join Date */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                          {formatDate(user.joinDate)}
-                        </td>
+                          {/* EMAIL */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                            {user.email || "N/A"}
+                          </td>
 
-                        {/* Avg Score */}
-                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-600">
-                          <span className="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">
-                            {user.avgScore}%
-                          </span>
-                        </td>
+                          {/* JOIN DATE → createdAt */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                            {user.createdAt
+                              ? formatDate(user.createdAt)
+                              : "N/A"}
+                          </td>
 
-                        {/* Action */}
-                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                          <button
-                            onClick={() => handleViewDetails(user)}
-                            className="text-white bg-blue-600 hover:bg-blue-700 font-medium px-4 py-2 rounded-lg transition-colors shadow-md"
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          {/* AVG SCORE → Not in object → N/A */}
+                          {/* <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-slate-600">
+                            <span className="bg-slate-100 text-slate-700 text-xs font-medium mr-2 px-2.5 py-0.5 rounded-full">
+                              N/A
+                            </span>
+                          </td> */}
+
+                          {/* ACTION DATE (createdAt again or your timestamp) */}
+                       
+
+                          {/* VIEW BUTTON */}
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                            <button
+                              onClick={() => handleViewDetails(user)}
+                              className="text-white cursor-pointer bg-blue-600 hover:bg-blue-700 font-medium px-4 py-2 rounded-lg transition-colors shadow-md"
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : (
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="text-center text-slate-500 py-10"
                       >
                         No users found.
@@ -298,12 +310,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                   <div className="p-2 bg-yellow-100 rounded-full mb-1">
                     <Award className="w-5 h-5 text-yellow-600" />
                   </div>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Avg. Score
-                  </p>
-                  <p className="text-lg font-bold text-slate-900">
-                    {selectedUser.avgScore}%
-                  </p>
+                 
                 </div>
               </div>
 

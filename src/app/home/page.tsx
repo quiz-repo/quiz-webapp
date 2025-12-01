@@ -9,7 +9,7 @@ const OnlineTestLandingPage = () => {
     router.push("register");
   };
   const handleAdminLogin = () => {
-    router.push("/admin-login"); // change this path if needed
+    router.push("/admin-login"); 
   };
 
   return (
@@ -86,3 +86,81 @@ const OnlineTestLandingPage = () => {
 };
 
 export default OnlineTestLandingPage;
+
+
+
+//     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+//           {questions.map((q:any) => {
+//             const userQ = detailedResults.find((d:any) => d.questionId === q.id);
+//             console.log("userQ", q);
+//             return (
+//               <div
+//                 key={q.id}
+//                 className={`p-4 rounded-lg shadow-sm border ${
+//                   userQ
+//                     ? userQ.isCorrect
+//                       ? "bg-emerald-50 border-emerald-300"
+//                       : "bg-rose-50 border-rose-300"
+//                     : "bg-slate-100 border-slate-300"
+//                 }`}
+//               >
+//                 <p className="font-bold text-sm mb-2 text-slate-700">
+//                   {q.question}
+//                 </p>
+
+//                 {/* ---------------- USER ATTEMPTED ---------------- */}
+//                 {userQ ? (
+//                   <div className="text-xs space-y-2">
+//                     {/* USER ANSWER */}
+//                     <p
+//                       className={
+//                         userQ.isCorrect ? "text-emerald-700" : "text-rose-700"
+//                       }
+//                     >
+//                       {userQ.isCorrect ? (
+//                         <CheckCircle2 className="w-3 h-3 inline mr-1" />
+//                       ) : (
+//                         <XCircle className="w-3 h-3 inline mr-1" />
+//                       )}
+//                       <strong>Your Answer:</strong> {q.options[userQ.attempt]}
+//                     </p>
+
+//                     {/* CORRECT ANSWER ALWAYS SHOWN */}
+//                     {!userQ.isCorrect && (
+//                       <p className="text-emerald-700">
+//                         <strong>Correct Answer:</strong>{" "}
+//                         {q.options[q.correctAnswer]}
+//                       </p>
+//                     )}
+//                   </div>
+//                 ) : (
+//                   /* ---------------- NOT ATTEMPTED ---------------- */
+//                   <div className="text-xs space-y-2">
+//                     {/* <p className="text-rose-700 font-semibold">
+//                       ❌ You did not attempt this question
+//                     </p> */}
+
+//                     {/* Show all options */}
+//                     {q.options?.map((opt:any, idx:any) => (
+//                       <p
+//                         key={idx}
+//                         className={`px-2 py-1 rounded ${
+//                           q.options[q.correctAnswer] === opt
+//                             ? "bg-emerald-200 text-emerald-800 font-bold"
+//                             : "bg-white text-slate-700"
+//                         }`}
+//                       >
+//                         {opt}
+//                       </p>
+//                     ))}
+
+//                     <p className="text-emerald-700 font-semibold">
+//                       Correct Answer: {q.options[q.correctAnswer]}
+//                     </p>
+//                   </div>
+//                 )}
+//               </div>
+//             );
+//           })}
+//         </div>
+// correct my complete div 

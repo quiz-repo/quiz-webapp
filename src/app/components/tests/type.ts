@@ -30,12 +30,20 @@ export interface TestResult {
   score: number;
   timeTaken: string;
   dateCompleted: string;
-  userAnswers: number[];
+  userAnswers: UserAnswer[];
+
   totalQuestions: number;
   percentage: number;
 }
+export interface UserAnswer {
+  questionId: string;
+  attempt: any;
+  answer: any;
+  correctAnswer: any;
+  userAnswers: any;
+  
+}
 
-// Structure for saving test results to Firebase
 export interface FirebaseTestResult {
   testId: string;
   userId: string;

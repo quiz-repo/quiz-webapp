@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Shield, Lock, Mail } from "lucide-react";
 import { auth } from "@/lib/Firebase";
 import { toast } from "react-toastify";
-import { setCookie } from "cookies-next"; // Import cookies-next
+
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -32,9 +32,6 @@ const AdminLogin = () => {
         email,
         password
       );
-
-      // No need to manually handle the token. Firebase SDK manages the session.
-      // The middleware will handle redirects based on the session state.
 
       toast.success("Admin login successful!");
       router.push("/adminPanel");
