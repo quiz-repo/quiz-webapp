@@ -1,3 +1,4 @@
+"use client"
 import React, { useState, useCallback, useEffect } from "react";
 import {
   BarChart3,
@@ -12,9 +13,7 @@ import {
   Zap,
   Star,
   Trophy,
-  AlertCircle,
   Eye,
-  HelpCircle,
 } from "lucide-react";
 import {
   collection,
@@ -25,8 +24,6 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "@/lib/Firebase";
-
-// --- TYPE DEFINITIONS ---
 
 interface QuestionResult {
   questionId: string;
@@ -82,7 +79,6 @@ interface TestEntry {
 
 interface UserAttemptDetailProps {
   result: UserTestResult;
-
   onBack: () => void;
 }
 
@@ -113,9 +109,9 @@ const secondsToTime = (totalSec: number): string => {
   )}`;
 };
 
-// --- FIREBASE DATA FETCHING ---
+// --- FIREBASE DATA FETCHING (moved inside component scope) ---
 
-export const getTestsWithResults = async (): Promise<TestEntry[]> => {
+const getTestsWithResults = async (): Promise<TestEntry[]> => {
   try {
     const testsSnap = await getDocs(collection(db, "tests"));
 
@@ -411,129 +407,90 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
         </div>
       </div>
 
-      {/* <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 p-5">
-        <h2 className="text-xl font-bold text-slate-800 flex items-center ">
-          <XCircle className="w-5 h-5 mr-2 text-rose-500" />
-          {result?.totalQuestions - result?.score} Wrong Answers (
-          {result?.score} Correct)
-        </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {questions.map((q: any, index: number) => {
+          const userQ = detailedResults.find((d: any) => d.questionId === q.id);
+          const userAttempt = userQ?.attempt;
+          const isCorrect = userAttempt === q.correctAnswer;
 
-        {wrongQuestions.length === 0 ? (
-          <p className="text-lg text-emerald-600 italic"></p>
-        ) : (
-          <div className="space-y-4">
-            {wrongQuestions.map((q:any, index:any) => (
-              <div
-                key={q.questionId || index}
-                className="border-l-4 border-rose-500 pl-4 py-2 bg-rose-50 rounded-md"
-              >
-                <p className="font-semibold text-slate-800 flex items-center">
-                  <HelpCircle className="w-4 h-4 mr-2 text-slate-600" />
-                  Question #{index + 1}: {questions.find(ques => ques.id === q.questionId)?.question || q.questionText}
-                </p>
+          return (
+            <div
+              key={q.id}
+              className={`p-4 rounded-lg shadow-sm border ${
+                isCorrect
+                  ? "border-green-300 bg-green-50"
+                  : "border-red-300 bg-red-50"
+              }`}
+            >
+              {/* Question */}
+              <h2 className="font-bold text-lg">
+                {index + 1}. {q.question}
+              </h2>
 
-                <p className="text-sm text-rose-700 ml-6 mt-1">
-                  <strong>Your Answer:</strong>{" "}
-                  <span className="font-bold"> {questions.find(ques => ques.id === q.questionId)?.options?.[q.answer]}</span>
-                </p>
+              {/* Options */}
+              <div className="space-y-3 mt-4">
+                {q.options.map((opt: any, idx: number) => {
+                  const isCorrectOpt = idx === q.correctAnswer;
+                  const isUser = idx === userAttempt;
 
-                <p className="text-sm text-emerald-700 ml-6">
-                  <strong>Correct Answer:</strong>{" "}
-                  <span className="font-bold">
-                    {questions.find(ques => ques.id === q.questionId)?.options?.[q.correctAnswer]}
-                  </span>
-                </p>
+                  // User selected correct answer → GREEN strong
+                  if (isUser && isCorrectOpt) {
+                    return (
+                      <p
+                        key={idx}
+                        className="border p-3 rounded-lg bg-emerald-300 text-emerald-900 border-emerald-500 font-bold"
+                      >
+                        {opt}
+                      </p>
+                    );
+                  }
+
+                  // User selected wrong answer → RED
+                  if (isUser && !isCorrectOpt) {
+                    return (
+                      <p
+                        key={idx}
+                        className="border p-3 rounded-lg bg-rose-300 text-rose-900 border-rose-500 font-bold"
+                      >
+                        {opt}
+                      </p>
+                    );
+                  }
+
+                  // Correct answer (when user selected something else) → GREEN light
+                  if (isCorrectOpt && userAttempt !== q.correctAnswer) {
+                    return (
+                      <p
+                        key={idx}
+                        className="border p-3 rounded-lg bg-emerald-200 text-emerald-800 border-emerald-400 font-semibold"
+                      >
+                        {opt}
+                      </p>
+                    );
+                  }
+
+                  // Default option
+                  return (
+                    <p
+                      key={idx}
+                      className="border p-3 rounded-lg bg-white text-slate-700 border-slate-200"
+                    >
+                      {opt}
+                    </p>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        )}
-      </div> */}
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  {questions.map((q: any, index: number) => {
-    const userQ = detailedResults.find((d: any) => d.questionId === q.id);
-    const userAttempt = userQ?.attempt;
-    const isCorrect = userAttempt === q.correctAnswer;
-
-    return (
-      <div
-        key={q.id}
-        className={`p-4 rounded-lg shadow-sm border ${
-          isCorrect
-            ? "border-green-300 bg-green-50"
-            : "border-red-300 bg-red-50"
-        }`}
-      >
-        {/* Question */}
-        <h2 className="font-bold text-lg">
-          {index + 1}. {q.question}
-        </h2>
-
-        {/* Options */}
-        <div className="space-y-3 mt-4">
-          {q.options.map((opt: any, idx: number) => {
-            const isCorrectOpt = idx === q.correctAnswer;
-            const isUser = idx === userAttempt;
-
-            // User selected correct answer → GREEN strong
-            if (isUser && isCorrectOpt) {
-              return (
-                <p
-                  key={idx}
-                  className="border p-3 rounded-lg bg-emerald-300 text-emerald-900 border-emerald-500 font-bold"
-                >
-                  {opt}
-                </p>
-              );
-            }
-
-            // User selected wrong answer → RED
-            if (isUser && !isCorrectOpt) {
-              return (
-                <p
-                  key={idx}
-                  className="border p-3 rounded-lg bg-rose-300 text-rose-900 border-rose-500 font-bold"
-                >
-                  {opt}
-                </p>
-              );
-            }
-
-            // Correct answer (when user selected something else) → GREEN light
-            if (isCorrectOpt && userAttempt !== q.correctAnswer) {
-              return (
-                <p
-                  key={idx}
-                  className="border p-3 rounded-lg bg-emerald-200 text-emerald-800 border-emerald-400 font-semibold"
-                >
-                  {opt}
-                </p>
-              );
-            }
-
-            // Default option
-            return (
-              <p
-                key={idx}
-                className="border p-3 rounded-lg bg-white text-slate-700 border-slate-200"
-              >
-                {opt}
-              </p>
-            );
-          })}
-        </div>
-
-        {/* Correct / Wrong message */}
-        {isCorrect ? (
-          <p className="text-green-600 font-semibold mt-3">✔ Correct</p>
-        ) : (
-          <p className="text-red-600 font-semibold mt-3">❌ Wrong</p>
-        )}
+              {/* Correct / Wrong message */}
+              {isCorrect ? (
+                <p className="text-green-600 font-semibold mt-3">✔ Correct</p>
+              ) : (
+                <p className="text-red-600 font-semibold mt-3"></p>
+              )}
+            </div>
+          );
+        })}
       </div>
-    );
-  })}
-</div>
-
     </div>
   );
 };
@@ -663,7 +620,7 @@ const TestDetailsView: React.FC<{
                       onClick={() => onSelectAttempt(result)}
                       className="text-indigo-600 cursor-pointer hover:text-indigo-900 bg-indigo-100 px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center"
                     >
-                      <Eye className="w-4 h-4 mr-1" /> View Errors
+                      <Eye className="w-4 h-4 mr-1" /> View Score
                     </button>
                   </td>
                 </tr>
@@ -687,19 +644,25 @@ const TestDetailsView: React.FC<{
   );
 };
 
-const App = () => {
+const ResultsManagementPage: React.FC = () => {
   const [selectedTest, setSelectedTest] = useState<TestEntry | null>(null);
   const [selectedAttempt, setSelectedAttempt] = useState<UserTestResult | null>(
     null
   );
   const [allTestResults, setAllTestResults] = useState<TestEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+ const [loading, setLoading] = useState(true); // TypeScript infers boolean
+
 
   useEffect(() => {
     const fetchResults = async () => {
-      const results = await getTestsWithResults();
-      setAllTestResults(results);
-      setLoading(false);
+      try {
+        const results = await getTestsWithResults();
+        setAllTestResults(results);
+      } catch (error) {
+        console.error("Failed to fetch test results:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchResults();
@@ -774,4 +737,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default ResultsManagementPage;

@@ -1,4 +1,4 @@
-
+// types.ts
 export interface Question {
   id: number;
   question: string;
@@ -6,6 +6,7 @@ export interface Question {
   correctAnswer: number;
   [key: string]: any;
 }
+
 export interface Test {
   id: string;
   title: string;
@@ -13,8 +14,8 @@ export interface Test {
   duration: number;
   difficulty: string;
   subject: string;
-  instructions?: string[]; 
-   totalQuestions?: number;
+  instructions?: string[];
+  totalQuestions?: number;
   questions: {
     id: string;
     question: string;
@@ -31,17 +32,51 @@ export interface TestResult {
   timeTaken: string;
   dateCompleted: string;
   userAnswers: UserAnswer[];
-
   totalQuestions: number;
   percentage: number;
 }
+export interface ResultsManagementProps {
+  users: User[];
+  tests: Tests[];
+  loading: boolean;
+}
+export interface Tests {
+  id: string;
+  name: string;        // <-- required
+  description?: string;
+}
+
 export interface UserAnswer {
   questionId: string;
   attempt: any;
-  answer: any;
-  correctAnswer: any;
-  userAnswers: any;
-  
+  answer?: any;
+  correctAnswer?: any;
+  userAnswers?: any;
+}
+
+export interface UserSummaryTestResult {
+  testName: string;
+  score: number;
+  date: string;
+  duration: string;
+  status: "completed" | "in-progress"; // union type to match your component
+}
+
+export interface User {
+  id: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  email: string;
+  status: "active" | "inactive"; // union type
+  joinDate: string;
+  completedTests: number;
+  totalTests: number;
+  avgScore: number;
+  createdAt?: any;
+  testResults?: UserSummaryTestResult[];
+  photoURL?: string;
 }
 
 export interface FirebaseTestResult {

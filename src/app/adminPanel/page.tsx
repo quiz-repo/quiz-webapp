@@ -26,7 +26,7 @@ import {
   getDoc,
   Timestamp,
 } from "firebase/firestore";
-import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
   db,
   setDocByFirebase,
@@ -47,7 +47,7 @@ import ResultsManagement from "../resultsManagment/page";
 
 interface Test {
   id: string;
-  title: string;
+  title: string;  
   subject?: string;
   duration?: number;
   difficulty?: string;
@@ -1242,9 +1242,13 @@ const AdminPanel: React.FC = () => {
 
             {activeTab === "results" && (
               <ResultsManagement
-                users={users}
-                tests={tests}
-                loading={loading}
+                // users={users}
+                // tests={tests.map((t) => ({
+                //   ...t,
+            
+                //   name: (t as any).name ?? t.title ?? "",
+                // }))}
+                // loading={loading}
               />
             )}
 
