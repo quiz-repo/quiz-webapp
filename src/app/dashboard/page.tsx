@@ -19,6 +19,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import UserModal from "../components/modals/UserModal";
 
 type ViewType = "dashboard" | "instructions" | "test" | "results";
+type UserAnswer = string | number | { answer: string | number } | null | undefined;
 
 export default function TestDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -172,13 +173,15 @@ const handleSubmitTest = async (): Promise<void> => {
 
     // --- 1. Clean and Prepare userAnswers & Calculate Score Simultaneously ---
     const userAnswers = selectedTest.questions.map((q) => {
-      const rawUserAnswer = answers[q.id];
+      // const rawUserAnswer = answers[q?.id];
 
       // Standardize the answer value: check if it's an object with an 'answer' property, otherwise use the value directly.
-      const userAnswerValue =
-        (typeof rawUserAnswer === "object" && rawUserAnswer !== null && 'answer' in rawUserAnswer)
-          ? rawUserAnswer.answer // Use the nested answer if it's an object structure
-          : rawUserAnswer; // Use the raw value (which should be the index/option)
+     const rawUserAnswer: UserAnswer =  answers[q?.id];
+
+const userAnswerValue =
+  (typeof rawUserAnswer === "object" && rawUserAnswer !== null && 'answer' in rawUserAnswer)
+    ? (rawUserAnswer as { answer: string | number }).answer // type assertion here
+    : rawUserAnswer; // Use the raw value (which should be the index/option)
 
       // Convert to string for consistent comparison, ignore null/undefined attempts
       const attemptValue = userAnswerValue !== undefined && userAnswerValue !== null ? String(userAnswerValue) : undefined;

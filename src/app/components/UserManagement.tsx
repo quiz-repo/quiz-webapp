@@ -11,8 +11,8 @@ import {
   CheckCircle,
   BarChart3,
 } from "lucide-react";
-import { Select } from "antd";
-import Image from "next/image";
+import { UserSummaryTestResult } from "./tests/type";
+
 
 interface TestResult {
   testName: string;
@@ -22,18 +22,20 @@ interface TestResult {
   status: string;
 }
 
-interface User {
+export interface User {
   id: string;
   name: string;
+  firstName?: string; 
+  lastName?: string; 
   displayName?: string;
   email: string;
-  status?: "active" | "inactive";
-  joinDate: string;
+  status: "active" | "inactive";
+  joinDate: string; 
   completedTests: number;
   totalTests: number;
   avgScore: number;
-  createdAt?: any;
-  testResults?: TestResult[];
+  createdAt?: any; 
+  testResults?: UserSummaryTestResult[];
   photoURL?: string;
 }
 
@@ -46,9 +48,16 @@ interface UserManagementProps {
   loading: boolean;
   filteredUsers: User[];
   selectedUser: User | null;
+   loadUsers: () => Promise<void>;
   setSelectedUser: React.Dispatch<React.SetStateAction<User | null>>;
+handleFileUpload?: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  //   loadUsers: () => Promise<void>;
+  // handleFileUpload?: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  showExportUsers: boolean;
+  setShowExportUsers: React.Dispatch<React.SetStateAction<boolean>>;
+  showUserAnalytics: boolean;
+  setShowUserAnalytics: React.Dispatch<React.SetStateAction<boolean>>;
 }
-
 const UserManagement: React.FC<UserManagementProps> = ({
   users,
   searchTerm,
@@ -60,11 +69,14 @@ const UserManagement: React.FC<UserManagementProps> = ({
   setSelectedUser,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+const handleViewDetails = (user: User) => {
+  setSelectedUser({
+    ...user,
+  status: user.status ?? "active"
 
-  const handleViewDetails = (user: User) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
-  };
+  });
+  setIsModalOpen(true);
+};
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
