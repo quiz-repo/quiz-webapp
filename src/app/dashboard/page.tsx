@@ -8,10 +8,10 @@ import { InstructionsView } from "../components/tests/InstructionsView";
 import { TestView } from "../components/tests/TestView";
 import { ResultsView } from "../components/tests/ResultsView";
 import ConfirmModal from "../components/modals/ConfirmModal";
-import { 
-  getDocByFirebase, 
-  signOut, 
-  addTestResult, 
+import {
+  getDocByFirebase,
+  signOut,
+  addTestResult,
   getUserTestResults,
 } from "@/lib/Firebase";
 import { auth } from "@/lib/Firebase";
@@ -30,8 +30,10 @@ export default function TestDashboard() {
   const [testStarted, setTestStarted] = useState<boolean>(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [currentResult, setCurrentResult] = useState<TestResult | null>(null);
-  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState<boolean>(false);
-  const [isNavigationModalVisible, setIsNavigationModalVisible] = useState<boolean>(false);
+  const [isLogoutModalVisible, setIsLogoutModalVisible] =
+    useState<boolean>(false);
+  const [isNavigationModalVisible, setIsNavigationModalVisible] =
+    useState<boolean>(false);
   const [tests, setTests] = useState<Test[]>([]);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -40,7 +42,7 @@ export default function TestDashboard() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const router = useRouter();
 
-  // Authentication check
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -89,25 +91,25 @@ export default function TestDashboard() {
     try {
       console.log("📚 Starting data load process");
       setError(null);
-      
+
       // Fetch tests and user results in parallel
       const [testsResult, resultsResult] = await Promise.allSettled([
         fetchTests(),
-        fetchUserTestResults()
+        fetchUserTestResults(),
       ]);
 
-      if (testsResult.status === 'rejected') {
-        console.error("❌ Failed to fetch tests:", testsResult.reason);
+      if (testsResult.status === "rejected") {
+     
         setError("Failed to load tests. Please refresh the page.");
       }
 
-      if (resultsResult.status === 'rejected') {
+      if (resultsResult.status === "rejected") {
         console.error("⚠️  Failed to fetch results:", resultsResult.reason);
       }
 
-      console.log("✅ Data load complete");
+  
     } catch (error) {
-      console.error("❌ Unexpected error in loadData:", error);
+
       setError("An unexpected error occurred. Please refresh the page.");
     }
   };
@@ -117,19 +119,18 @@ export default function TestDashboard() {
       console.log("🔍 Fetching tests from Firestore...");
       const testData = await getDocByFirebase();
       console.log(`✅ Received ${testData.length} tests`);
-      
-      // Log each test to see the questions structure
+
       testData.forEach((test: any, index: number) => {
         console.log(`Test ${index + 1} (${test.id}):`, {
           title: test.title,
           questionsCount: test.questions?.length || 0,
-          hasQuestions: !!test.questions
+          hasQuestions: !!test.questions,
         });
       });
 
       setTests(testData as Test[]);
     } catch (error) {
-      console.error("❌ Failed to fetch tests:", error);
+      console.error(" Failed to fetch tests:", error);
       throw error;
     }
   };
@@ -139,93 +140,134 @@ export default function TestDashboard() {
       console.log("📊 Fetching user test results...");
       const results = await getUserTestResults();
       console.log(`✅ Received ${results.length} test results`);
-      // Ensure each result has userAnswers, totalQuestions, and percentage
       const mappedResults = results.map((result: any) => ({
         ...result,
         userAnswers: result.userAnswers ?? [],
         totalQuestions: result.totalQuestions ?? 0,
-        percentage: result.percentage ?? (
-          result.totalQuestions && result.score != null
+        percentage:
+          result.percentage ??
+          (result.totalQuestions && result.score != null
             ? Math.round((result.score / result.totalQuestions) * 100)
-            : 0
-        ),
+            : 0),
       }));
       setTestResults(mappedResults);
-      // setTestResults(results);
+   
     } catch (error) {
-      console.error("❌ Failed to fetch test results:", error);
-      // Don't throw - allow app to continue without results
+      console.error("Failed to fetch test results:", error);
     }
   };
+const handleSubmitTest = async (): Promise<void> => {
+  setIsSubmitted(true);
+  // Ensure we have a test to submit
+  if (!selectedTest || !selectedTest.questions || selectedTest.questions.length === 0) {
+    console.warn("Attempted to submit test without a valid selectedTest or questions.");
+    return;
+  }
 
-  const handleSubmitTest = async (): Promise<void> => {
-    setIsSubmitted(true);
-    if (!selectedTest) return;
+  try {
+    console.log(" Building userAnswers and calculating score...");
 
-    try {
-      console.log("📝 Submitting test...");
-      let score = 0;
+    const questionsLength = selectedTest.questions.length;
+    let score = 0;
 
-      selectedTest.questions.forEach((question) => {
-        const questionId = String(question.id);
-        const userAnswer = answers[questionId];
+    // --- 1. Clean and Prepare userAnswers & Calculate Score Simultaneously ---
+    const userAnswers = selectedTest.questions.map((q) => {
+      const rawUserAnswer = answers[q.id];
 
-        const isCorrect =
-          typeof userAnswer !== "undefined" &&
-          String(userAnswer) === String(question.correctAnswer);
+      // Standardize the answer value: check if it's an object with an 'answer' property, otherwise use the value directly.
+      const userAnswerValue =
+        (typeof rawUserAnswer === "object" && rawUserAnswer !== null && 'answer' in rawUserAnswer)
+          ? rawUserAnswer.answer // Use the nested answer if it's an object structure
+          : rawUserAnswer; // Use the raw value (which should be the index/option)
 
-        if (isCorrect) {
-          score++;
-        }
-      });
-
-      const totalTestDurationInSeconds = selectedTest.duration * 60;
-      const timeTakenInSeconds = totalTestDurationInSeconds - timeRemaining;
-      const safeTimeTakenInSeconds = Math.max(0, timeTakenInSeconds);
-      const minutes = Math.floor(safeTimeTakenInSeconds / 60);
-      const seconds = safeTimeTakenInSeconds % 60;
+      // Convert to string for consistent comparison, ignore null/undefined attempts
+      const attemptValue = userAnswerValue !== undefined && userAnswerValue !== null ? String(userAnswerValue) : undefined;
       
-      const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
-        .toString()
-        .padStart(2, "0")}`;
+      const isCorrect =
+        attemptValue !== undefined &&
+        String(attemptValue) === String(q.correctAnswer);
 
-      const userId = auth.currentUser?.uid || "guest";
-
-      const newResult: Omit<TestResult, 'id'> = {
-        score,
-        timeTaken,
-        testId: selectedTest.id,
-        dateCompleted: new Date().toLocaleDateString(),
-        userId,
-        userAnswers: Object.values(answers),
-        totalQuestions: selectedTest.questions.length,
-        percentage: Math.round((score / selectedTest.questions.length) * 100),
-      };
-
-      const resultId = await addTestResult(newResult);
+      if (isCorrect) {
+        score++;
+      }
       
-      const resultWithId: TestResult = {
-        id: resultId,
-        ...newResult,
+      // Ensure 'attempt' is explicitly set to null/0/-1 or excluded if not answered, 
+      // but if included, must not be 'undefined' for Firestore.
+      // We'll use 'null' for the attempt if it was skipped/unanswered.
+      return {
+        questionId: q.id,
+        // The attempt field MUST NOT be undefined. Use null if unanswered.
+        attempt: attemptValue !== undefined ? attemptValue : null, 
+        // We'll store the correct answer for reference
+        correctAnswer: q.correctAnswer, 
       };
+    });
 
-      console.log("✅ Test result saved:", resultWithId);
-      setTestResults((prev) => [...prev, resultWithId]);
-      setCurrentResult(resultWithId);
-      setTestStarted(false);
-      setCurrentView("results");
-    } catch (error) {
-      console.error("❌ Failed to submit test:", error);
-      setError("Failed to save test results. Please try again.");
-    }
-  };
+    console.log(" Score calculated:", score);
+
+    // --- 2. Calculate Time Taken ---
+    const totalTestDurationInSeconds = selectedTest.duration * 60;
+    const timeTakenInSeconds = Math.max(
+      0,
+      totalTestDurationInSeconds - timeRemaining
+    );
+    const minutes = Math.floor(timeTakenInSeconds / 60);
+    const seconds = timeTakenInSeconds % 60;
+
+    const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+
+    // --- 3. Prepare Final Result Object (Preventing 'undefined') ---
+
+    // Safely get userId, defaulting to "guest"
+    const userId = auth.currentUser?.uid || "guest";
+    
+    // Safely get dateCompleted string, ensuring it's not undefined.
+    const dateCompleted = new Date().toLocaleDateString() || new Date().toISOString().split('T')[0];
+
+    const newResult: Omit<TestResult, "id"> = {
+      score,
+      timeTaken,
+      testId: selectedTest.id,
+      dateCompleted, // Use the safely generated string
+      userId,
+      userAnswers,
+      totalQuestions: questionsLength,
+      percentage: Math.round((score / questionsLength) * 100),
+      // Ensure any optional fields not shown here are explicitly handled (e.g., set to null if intended to be stored).
+    };
+
+    // --- 4. Save to Firestore via addTestResult ---
+    const resultId = await addTestResult(newResult);
+
+    console.log(" Firebase returned ID:", resultId);
+
+    const resultWithId: TestResult = {
+      id: resultId,
+      ...newResult,
+    };
+
+    console.log("✅ Test result saved successfully:", resultWithId);
+
+    // --- 5. State Updates ---
+    setTestResults((prev) => [...prev, resultWithId]);
+    setCurrentResult(resultWithId);
+    setTestStarted(false);
+    setCurrentView("results");
+
+  } catch (error) {
+    console.error("🔥 Error saving test result:", error);
+    setError("Failed to save test results. Please try again.");
+  }
+};
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
   const handleLogout = (): void => setIsLogoutModalVisible(true);
   const cancelLogout = (): void => setIsLogoutModalVisible(false);
-  
+
   const handleHeaderTitleClick = (): void => {
     if (currentView !== "dashboard") {
       setIsNavigationModalVisible(true);
@@ -244,7 +286,7 @@ export default function TestDashboard() {
   const resetTestState = (): void => {
     setCurrentView("dashboard");
     setSelectedTest(null);
-    setCurrentResult(null); 
+    setCurrentResult(null);
     setTestStarted(false);
     setCurrentQuestionIndex(0);
     setAnswers({});
@@ -258,21 +300,19 @@ export default function TestDashboard() {
       resetTestState();
       router.push("/");
     } catch (error) {
-      console.error("❌ Logout failed:", error);
       setError("Logout failed. Please try again.");
     }
   };
 
   const handleSelectTest = (test: Test): void => {
-    console.log("🎯 Selected test:", {
+    console.log("Selected test:", {
       id: test.id,
       title: test.title,
-      questionsCount: test.questions?.length || 0
+      questionsCount: test.questions?.length || 0,
     });
 
-    // Validate test has questions
+   
     if (!test.questions || test.questions.length === 0) {
-      // setError(`This test has no questions available. Please contact support.`);
       return;
     }
 
@@ -285,10 +325,10 @@ export default function TestDashboard() {
 
   const handleStartTest = (): void => {
     if (!selectedTest) return;
-    
-    console.log("🚀 Starting test:", selectedTest.title);
-    
-    const durationInSeconds = selectedTest.duration * 60; 
+
+   
+
+    const durationInSeconds = selectedTest.duration * 60;
     setCurrentView("test");
     setTimeRemaining(durationInSeconds);
     setTestStarted(true);
@@ -316,12 +356,11 @@ export default function TestDashboard() {
       setCurrentResult(testResult);
       setCurrentView("results");
     } else {
-      console.warn("⚠️  No result found for test ID:", test.id);
+      console.warn("  No result found for test ID:", test.id);
       setError("No results found for this test.");
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
@@ -330,7 +369,7 @@ export default function TestDashboard() {
     );
   }
 
-  // Not authenticated state
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
@@ -393,7 +432,7 @@ export default function TestDashboard() {
         </header>
       )}
 
-      {error && (
+      {/* {error && (
         <div className="max-w-7xl mx-auto px-6 pt-4">
           <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded-lg">
             <div className="flex justify-between items-start">
@@ -404,7 +443,7 @@ export default function TestDashboard() {
                   Check the browser console for more details.
                 </small>
               </div>
-              <button 
+              <button
                 onClick={() => setError(null)}
                 className="ml-4 text-red-300 hover:text-red-100 text-xl leading-none"
               >
@@ -413,9 +452,9 @@ export default function TestDashboard() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="overflow-hidden h-82vh mx-auto px-6 py-8">
         {currentView === "dashboard" && (
           <DashboardView
             tests={tests}
@@ -449,7 +488,7 @@ export default function TestDashboard() {
             setCurrentQuestionIndex={setCurrentQuestionIndex}
           />
         )}
-        
+
         {currentView === "results" && selectedTest && currentResult && (
           <ResultsView
             test={selectedTest}
@@ -467,7 +506,7 @@ export default function TestDashboard() {
         onConfirm={confirmLogout}
         onCancel={cancelLogout}
       />
-      
+
       <ConfirmModal
         title="End Test"
         message="Are you sure you want to end the test? Any unsaved progress will be lost."

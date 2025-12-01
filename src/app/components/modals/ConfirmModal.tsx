@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Modal } from "antd";
 
@@ -20,10 +19,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   return (
     <Modal
       width={300}
-     
-      title={
-        <span className="text-white items-center flex flex-col">{title}</span>
-      }
+      title={<span className="text-white items-center flex flex-col">{title}</span>}
       open={visible}
       onOk={onConfirm}
       onCancel={onCancel}
@@ -31,6 +27,9 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
       cancelText="Cancel"
       centered
       className="custom-dark-modal"
+
+      // 🔥 React 19 Fix
+      // motion={false}
     >
       <p className="text-white flex flex-col items-center">{message}</p>
     </Modal>

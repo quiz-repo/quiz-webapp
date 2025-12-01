@@ -1,9 +1,16 @@
-// middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
 
 // ---------------- Constants ----------------
-const PUBLIC_ROUTES = ["/", "/home", "/register", "/login", "/forgot-password"];
+const PUBLIC_ROUTES = [
+  "/", 
+  "/home", 
+  "/register", 
+  "/login", 
+  "/forgot-password",
+  "/admin-login"   // ✅ FIX - Now you can open the admin login page
+];
+
 const ADMIN_ROUTES = ["/adminPanel"];
 const PROTECTED_ROUTES = ["/dashboard"];
 
@@ -12,7 +19,9 @@ const FIREBASE_PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!;
 
 // Cache for JWKS (JSON Web Key Set)
 const JWKS = createRemoteJWKSet(
-  new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
+  new URL(
+    "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
+  )
 );
 
 // ---------------- Helpers ----------------
@@ -23,10 +32,12 @@ function matchesRoute(pathname: string, routes: string[]): boolean {
   );
 }
 
-function getRouteType(pathname: string): "public" | "admin" | "protected" | "other" {
+function getRouteType(
+  pathname: string
+): "public" | "admin" | "protected" | "other" {
+  if (matchesRoute(pathname, PUBLIC_ROUTES)) return "public";
   if (matchesRoute(pathname, ADMIN_ROUTES)) return "admin";
   if (matchesRoute(pathname, PROTECTED_ROUTES)) return "protected";
-  if (matchesRoute(pathname, PUBLIC_ROUTES)) return "public";
   return "other";
 }
 
@@ -36,7 +47,7 @@ async function verifyFirebaseToken(token: string) {
       issuer: `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`,
       audience: FIREBASE_PROJECT_ID,
     });
-    
+
     return payload;
   } catch (error) {
     console.error("Token verification error:", error);
@@ -44,17 +55,20 @@ async function verifyFirebaseToken(token: string) {
   }
 }
 
+// ---------------- Middleware ----------------
+
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
+
   const routeType = getRouteType(pathname);
 
-  // If a public route is accessed, allow it without any checks.
+  // -------- PUBLIC ROUTES (always allowed) --------
   if (routeType === "public") {
     return NextResponse.next();
   }
 
-  // Handle protected and admin routes
+  // -------- PROTECTED & ADMIN ROUTES (token required) --------
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -63,24 +77,20 @@ export async function middleware(request: NextRequest) {
     const decodedToken = await verifyFirebaseToken(token);
     const isAdmin = decodedToken.email === "admin@yopmail.com";
 
-    // If a user is not an admin but tries to access an admin route, redirect them.
+    // ❗ admin-only routes
     if (routeType === "admin" && !isAdmin) {
       return NextResponse.redirect(new URL("/home", request.url));
     }
-    
-    if (routeType === "protected" && !isAdmin) {
-      return NextResponse.next();
-    }
 
-    // If an admin user tries to access the dashboard, redirect them to the admin panel.
+    // ❗ if admin tries to access /dashboard, redirect to admin panel
     if (pathname.startsWith("/dashboard") && isAdmin) {
       return NextResponse.redirect(new URL("/adminPanel", request.url));
     }
 
-    // Allow the request to proceed if no redirect is needed.
+    // All good → allow request
     return NextResponse.next();
   } catch (error) {
-    // If the token is invalid or expired, redirect to login page and clear the cookie.
+    // Token invalid → redirect to login & delete cookie
     const response = NextResponse.redirect(new URL("/login", request.url));
     response.cookies.delete("token");
     return response;

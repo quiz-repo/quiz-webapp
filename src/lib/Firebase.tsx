@@ -301,7 +301,6 @@ async function getTotalUsers(): Promise<number> {
   }
 }
 
-
 const fetchTestResult = async (resultId: string): Promise<TestResult> => {
   try {
     const isAuthenticated = await ensureAuthenticated();
