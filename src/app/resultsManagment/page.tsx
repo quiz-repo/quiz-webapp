@@ -374,7 +374,7 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
     allTestResults.find((test) => test.testId === result.testId)?.testDetails
       ?.questions || [];
 
-  console.log("detailedResults", wrongQuestions);
+  console.log("detailedResults", detailedResults);
 
   return (
     <div className="space-y-6">
@@ -410,7 +410,7 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {questions.map((q: any, index: number) => {
           const userQ = detailedResults.find((d: any) => d.questionId === q.id);
-          const userAttempt = userQ?.attempt;
+         const userAttempt = Number(userQ?.attempt);
           const isCorrect = userAttempt === q.correctAnswer;
 
           return (
@@ -485,7 +485,7 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
               {isCorrect ? (
                 <p className="text-green-600 font-semibold mt-3">✔ Correct</p>
               ) : (
-                <p className="text-red-600 font-semibold mt-3"></p>
+                <p className="text-red-600 font-semibold mt-3">✘ Wrong</p>
               )}
             </div>
           );

@@ -8,13 +8,12 @@ const PUBLIC_ROUTES = [
   "/register", 
   "/login", 
   "/forgot-password",
-  "/admin-login"   // ✅ FIX - Now you can open the admin login page
+  "/admin-login" 
 ];
 
 const ADMIN_ROUTES = ["/adminPanel"];
 const PROTECTED_ROUTES = ["/dashboard"];
 
-// Firebase Project ID - used to verify tokens
 const FIREBASE_PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!;
 
 // Cache for JWKS (JSON Web Key Set)
@@ -25,7 +24,6 @@ const JWKS = createRemoteJWKSet(
 );
 
 // ---------------- Helpers ----------------
-
 function matchesRoute(pathname: string, routes: string[]): boolean {
   return routes.some(
     (route) => pathname === route || pathname.startsWith(route + "/")
@@ -56,11 +54,23 @@ async function verifyFirebaseToken(token: string) {
 }
 
 // ---------------- Middleware ----------------
-
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
 
+  // ------------------ FIX: Allow OPTIONS Preflight ------------------
+  if (request.method === "OPTIONS") {
+    const response = new NextResponse(null, { status: 204 });
+
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+    response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    response.headers.set("Access-Control-Max-Age", "86400");
+
+    return response;
+  }
+  // ------------------------------------------------------------------
+
+  const token = request.cookies.get("token")?.value;
   const routeType = getRouteType(pathname);
 
   // -------- PUBLIC ROUTES (always allowed) --------
@@ -97,6 +107,7 @@ export async function middleware(request: NextRequest) {
   }
 }
 
+// ---------------- Middleware Config ----------------
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

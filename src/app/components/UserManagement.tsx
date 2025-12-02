@@ -12,7 +12,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { UserSummaryTestResult } from "./tests/type";
-
+import { Avatar } from "antd";
 
 interface TestResult {
   testName: string;
@@ -25,16 +25,16 @@ interface TestResult {
 export interface User {
   id: string;
   name: string;
-  firstName?: string; 
-  lastName?: string; 
+  firstName?: string;
+  lastName?: string;
   displayName?: string;
   email: string;
   status: "active" | "inactive";
-  joinDate: string; 
+  joinDate: string;
   completedTests: number;
   totalTests: number;
   avgScore: number;
-  createdAt?: any; 
+  createdAt?: any;
   testResults?: UserSummaryTestResult[];
   photoURL?: string;
 }
@@ -48,11 +48,10 @@ interface UserManagementProps {
   loading: boolean;
   filteredUsers: User[];
   selectedUser: User | null;
-   loadUsers: () => Promise<void>;
+  loadUsers: () => Promise<void>;
   setSelectedUser: React.Dispatch<React.SetStateAction<User | null>>;
-handleFileUpload?: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
-  //   loadUsers: () => Promise<void>;
-  // handleFileUpload?: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleFileUpload?: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+
   showExportUsers: boolean;
   setShowExportUsers: React.Dispatch<React.SetStateAction<boolean>>;
   showUserAnalytics: boolean;
@@ -62,21 +61,23 @@ const UserManagement: React.FC<UserManagementProps> = ({
   users,
   searchTerm,
   setSearchTerm,
-  filterStatus,
-  setFilterStatus,
+
   filteredUsers,
   selectedUser,
   setSelectedUser,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-const handleViewDetails = (user: User) => {
-  setSelectedUser({
-    ...user,
-  status: user.status ?? "active"
-
-  });
-  setIsModalOpen(true);
-};
+    console.log("users:", users);
+  // console.log("Filtered users:", filteredUsers);
+  // console.log("Current search term:", searchTerm);
+  const handleViewDetails = (user: User) => {
+    console.log(setSelectedUser,"ygyyuguyg")
+    setSelectedUser({
+      ...user,
+      status: user.status ?? "active",
+    });
+    setIsModalOpen(true);
+  };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -162,7 +163,7 @@ const handleViewDetails = (user: User) => {
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-100 sticky top-0 z-10">
                   <tr>
-                      {/* <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    {/* <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       S.No
                     </th> */}
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
@@ -174,7 +175,7 @@ const handleViewDetails = (user: User) => {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Join Date
                     </th>
-              
+
                     <th className="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">
                       Action
                     </th>
@@ -202,9 +203,20 @@ const handleViewDetails = (user: User) => {
                           <td className="px-6 py-4">
                             <div className="flex items-center">
                               <div className="flex-shrink-0 h-10 w-10">
-                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-lg capitalize">
-                                  {fullName.charAt(0)}
-                                </div>
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 overflow-hidden">
+  {users?.[0]?.photoURL ? (
+    <img
+      src={users[0].photoURL}
+      alt={fullName}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <span className="text-blue-600 font-semibold text-lg capitalize">
+      {fullName.charAt(0)}
+    </span>
+  )}
+</div>
+
                               </div>
 
                               <div className="ml-4">
@@ -235,7 +247,6 @@ const handleViewDetails = (user: User) => {
                           </td> */}
 
                           {/* ACTION DATE (createdAt again or your timestamp) */}
-                       
 
                           {/* VIEW BUTTON */}
                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
@@ -267,117 +278,142 @@ const handleViewDetails = (user: User) => {
       </div>
 
       {/* Modal */}
-      {isModalOpen && selectedUser && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-xl p-6 shadow-2xl relative">
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <X className="w-5 h-5 cursor-pointer" />
-            </button>
+{isModalOpen && selectedUser && (
+  <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-xl w-full max-w-xl p-6 shadow-2xl relative">
+      <button
+        onClick={handleCloseModal}
+        className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
+      >
+        <X className="w-5 h-5 cursor-pointer" />
+      </button>
 
-            {/* Modal Content */}
-            <div className="bg-white rounded-xl p-6">
-              {/* Header */}
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg mb-3">
-                  <User className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-semibold text-slate-900">
-                    {selectedUser.name}
-                  </h2>
-                  <p className="text-sm text-slate-500">{selectedUser.email}</p>
-                </div>
-              </div>
+      {/* Modal Content */}
+      <div className="bg-white rounded-xl p-6">
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
-                  <div className="p-2 bg-blue-100 rounded-full mb-1">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Total Tests
-                  </p>
-                  <p className="text-lg font-bold text-slate-900">
-                    {selectedUser.totalTests}
-                  </p>
-                </div>
+        {/* Header */}
+   <div className="flex flex-col items-center text-center mb-6">
+  <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-full p-1 shadow-lg mb-3">
+    <Avatar
+      src={users?.[0]?.photoURL}
+      icon={!users?.[0]?.photoURL && <User />}
+      size={80}   // <--- Increase size here (60, 70, 80, 100 etc.)
+    />
+  </div>
 
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
-                  <div className="p-2 bg-green-100 rounded-full mb-1">
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Completed
-                  </p>
-                  <p className="text-lg font-bold text-slate-900">
-                    {selectedUser.completedTests}
-                  </p>
-                </div>
+  <div>
+    <h2 className="text-2xl font-semibold text-slate-900">
+      {selectedUser.name || selectedUser.displayName}
+    </h2>
+    <p className="text-sm text-slate-500">{selectedUser.email}</p>
+  </div>
+</div>
 
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
-                  <div className="p-2 bg-yellow-100 rounded-full mb-1">
-                    <Award className="w-5 h-5 text-yellow-600" />
-                  </div>
-                 
-                </div>
-              </div>
 
-              {/* Test Results */}
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 mb-3">
-                  Test Results
-                </h3>
-                {selectedUser.testResults &&
-                selectedUser.testResults.length > 0 ? (
-                  <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {selectedUser.testResults.map((result, index) => (
-                      <div
-                        key={index}
-                        className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-slate-100 transition"
-                      >
-                        <div className="flex-1 mb-2 md:mb-0">
-                          <p className="text-base font-semibold text-slate-900">
-                            {result.testName}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Date: {formatDate(result.date)}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="flex items-center space-x-1 text-slate-600 text-sm">
-                            <TrendingUp className="w-4 h-4 text-green-600" />
-                            <span>
-                              Score:{" "}
-                              <span className="font-semibold text-slate-900">
-                                {result.score}%
-                              </span>
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-1 text-slate-600 text-sm">
-                            <Clock className="w-4 h-4 text-slate-400" />
-                            <span>{result.duration}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center p-8 bg-slate-50 rounded-xl border border-slate-200">
-                    <BarChart3 className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                    <p className="text-slate-500 text-sm">
-                      No tests completed yet.
-                    </p>
-                  </div>
-                )}
-              </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+            <div className="p-2 bg-blue-100 rounded-full mb-1">
+              <FileText className="w-5 h-5 text-blue-600" />
             </div>
+            <p className="text-xs text-slate-500 font-medium">Total Tests</p>
+            <p className="text-lg font-bold text-slate-900">
+              {selectedUser.totalTests || 0}
+            </p>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+            <div className="p-2 bg-green-100 rounded-full mb-1">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            </div>
+            <p className="text-xs text-slate-500 font-medium">Completed</p>
+            <p className="text-lg font-bold text-slate-900">
+              {selectedUser.completedTests || 0}
+            </p>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+            <div className="p-2 bg-yellow-100 rounded-full mb-1">
+              <Award className="w-5 h-5 text-yellow-600" />
+            </div>
+            <p className="text-xs text-slate-500 font-medium">Avg Score</p>
+            <p className="text-lg font-bold text-slate-900">
+              {selectedUser.avgScore || 0}%
+            </p>
           </div>
         </div>
-      )}
+
+        {/* Test Results */}
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-slate-900 mb-3">
+            Test Results
+          </h3>
+
+          {selectedUser.testResults && selectedUser.testResults.length > 0 ? (
+            <div className="space-y-3 max-h-60 overflow-y-auto">
+
+              {selectedUser.testResults.map((result, index) => (
+                <div
+                  key={index}
+                  className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-slate-100 transition"
+                >
+                  {/* Left side */}
+                  <div className="flex-1 mb-2 md:mb-0">
+                    <p className="text-base font-semibold text-slate-900">
+                      {result.testName}
+                    </p>
+
+                    <p className="text-xs text-slate-500">
+                      Date: {formatDate(result.date)}
+                    </p>
+                  </div>
+
+                  {/* Right side */}
+                  <div className="flex items-center space-x-4">
+
+                    {/* Score */}
+                    <div className="text-sm text-slate-600 font-medium">
+                      {result.score}/{result.totalQuestions}
+                      <span className="text-slate-400 ml-1">
+                        ({result.percentage}%)
+                      </span>
+                    </div>
+
+                    {/* Duration */}
+                    <div className="flex items-center text-sm text-slate-600">
+                      <Clock className="w-4 h-4 text-slate-400 mr-1" />
+                      {result.duration}
+                    </div>
+
+                    {/* Pass / Fail */}
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        result.status === "Pass"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {result.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+
+            </div>
+          ) : (
+            <div className="text-center p-8 bg-slate-50 rounded-xl border border-slate-200">
+              <BarChart3 className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+              <p className="text-slate-500 text-sm">
+                No tests completed yet.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };

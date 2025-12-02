@@ -139,12 +139,6 @@ export const TestView = ({
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
-
-  // ----------------------------------
-
-  // --- useEffect Hooks ---
-
-  // 1. Fetch questions when test ID changes
   useEffect(() => {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -158,13 +152,11 @@ export const TestView = ({
     }
   }, [timeRemaining, onSubmitTest, isLoading]);
 
-  // 3. Handle Keyboard Shortcuts (Enter key)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter") {
         const currentAnswer = answers[currentQuestion?.id];
 
-        // check if user has answered the current question
         if (currentAnswer !== undefined && currentAnswer !== null) {
           if (currentQuestionIndex === questions.length - 1) {
             onSubmitTest();
@@ -187,9 +179,7 @@ export const TestView = ({
     onNextQuestion,
     onSubmitTest,
   ]);
-  // -----------------------
-
-  // --- Render Logic ---
+  
 
   if (isLoading) {
     return (
@@ -217,13 +207,8 @@ export const TestView = ({
 
   return (
     <div className="space-y-6 px-4 sm:px-6 md:px-10">
-      {/* Header */}
     
-
- 
-      <div className="flex flex-col lg:flex-row gap-6">
-
-        <div className="lg:w-100 flex-shrink-0">
+  <div className="flex-shrink-0">
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4  border border-white/20 space-y-4">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-2 sm:space-y-0 text-white">
@@ -249,16 +234,12 @@ export const TestView = ({
           />
         </div>
       </div>
-          <div className="sticky top-6">
-            <QuestionNavigator
-              questions={questions}
-              currentQuestionIndex={currentQuestionIndex}
-              answers={answers}
-              onQuestionSelect={handleQuestionSelect}
-            />
-          </div>
+       
         </div>
-        {/* Right Side - Question Content */}
+ 
+      <div className="flex flex-col lg:flex-row gap-6">
+
+      
         <div className="flex-1">
           {currentQuestion && (
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-white/20 space-y-6">
@@ -387,6 +368,15 @@ export const TestView = ({
             </div>
           )}
         </div>
+
+            <div className="sticky top-6">
+            <QuestionNavigator
+              questions={questions}
+              currentQuestionIndex={currentQuestionIndex}
+              answers={answers}
+              onQuestionSelect={handleQuestionSelect}
+            />
+          </div>
       </div>
     </div>
   );

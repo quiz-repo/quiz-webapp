@@ -32,7 +32,7 @@ export const DashboardView = ({
   return (
     <div className=" select-none w-full overflow-x-hidden">
       {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
         <StatsCard
           title="Active Tests"
           value={tests?.length || 0}
@@ -54,11 +54,11 @@ export const DashboardView = ({
           value={`${30} min `}
           icon={<Clock className="w-7 h-7 sm:w-8 sm:h-8 text-purple-500" />}
         />
-        <StatsCard
+        {/* <StatsCard
           title="Participants"
           value={totalUsers || 0}
           icon={<Users className="w-7 h-7 sm:w-8 sm:h-8 text-orange-500" />}
-        />
+        /> */}
       </div>
 
       {/* Available Tests */}

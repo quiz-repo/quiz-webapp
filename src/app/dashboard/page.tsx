@@ -42,7 +42,7 @@ export default function TestDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const router = useRouter();
-
+const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -119,7 +119,7 @@ export default function TestDashboard() {
     try {
       console.log("🔍 Fetching tests from Firestore...");
       const testData = await getDocByFirebase();
-      console.log(`✅ Received ${testData.length} tests`);
+      console.log(testData, 'sdfsdf');
 
       testData.forEach((test: any, index: number) => {
         console.log(`Test ${index + 1} (${test.id}):`, {
@@ -385,8 +385,10 @@ const userAnswerValue =
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
       {!isSubmitted && (
         <header className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+         <div className="w-[93%] mx-auto px-4 py-4">
+
+            <div className="flex flex-row items-center justify-between gap-3">
+
               <div className="flex items-center space-x-4">
                 {currentView !== "dashboard" && (
                   <button
