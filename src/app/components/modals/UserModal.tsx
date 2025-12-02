@@ -28,24 +28,26 @@ const UserModal: React.FC = () => {
 
   return (
     <>
-      {/* Trigger */}
-      <div
-        onClick={() => setIsModalOpen(true)}
-        className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-lg h-[42px] cursor-pointer hover:bg-white/20 transition"
-      >
-        <Avatar
-          size={35}
-          icon={<UserOutlined />}
-          style={{
-            background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-          }}
-        />
-        <span className="text-white font-medium truncate max-w-[119px]">
-          {user?.name
-            ? user.name.charAt(0).toUpperCase() + user.name.slice(1)
-            : "Loading..."}
-        </span>
-      </div>
+   <div
+  onClick={() => setIsModalOpen(true)}
+  className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-lg h-[42px] cursor-pointer hover:bg-white/20 transition"
+>
+  <Avatar
+    size={35}
+    src={user?.avatar}
+    icon={!user?.avatar && <UserOutlined />}
+    style={{
+      background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+    }}
+  />
+
+  <span className="text-white font-medium truncate max-w-[119px]">
+    {user?.name
+      ? user.name.charAt(0).toUpperCase() + user.name.slice(1)
+      : "Loading..."}
+  </span>
+</div>
+
 
       {/* Modal */}
       <Modal

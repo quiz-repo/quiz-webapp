@@ -47,7 +47,7 @@ import ResultsManagement from "../resultsManagment/page";
 
 interface Test {
   id: string;
-  title: string;  
+  title: string;
   subject?: string;
   duration?: number;
   difficulty?: string;
@@ -61,6 +61,7 @@ interface Test {
 }
 
 interface Question {
+  // length:number;
   id: string;
   testId: string;
   question: string;
@@ -244,7 +245,6 @@ const AdminPanel: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [analysisTestId, setAnalysisTestId] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
   const [downloadURL, setDownloadURL] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [pendingDeleteTestId, setPendingDeleteTestId] = useState<string | null>(
@@ -261,7 +261,7 @@ const AdminPanel: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showExportUsers, setShowExportUsers] = useState<boolean>(false);
   const [showUserAnalytics, setShowUserAnalytics] = useState<boolean>(false);
-
+  const [activeTestCount,setActiveTestsCount] = useState(0)
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalTests: 0,
     totalQuestions: 0,
@@ -279,7 +279,6 @@ const AdminPanel: React.FC = () => {
     draftTestsChangeDirection: "up",
   });
   console.log(dashboardStats, "dashboardStatsttt");
-
   const router = useRouter();
 
   const [newQuestion, setNewQuestion] = useState<NewQuestion>({
@@ -373,6 +372,7 @@ const AdminPanel: React.FC = () => {
         usersData.map(async (user: any) => {
           try {
             const testResults = await getUserTestResultsById(user.id);
+
             const completedTests = testResults.filter(
               (r: any) => r.status === "completed"
             ).length;
@@ -541,12 +541,23 @@ const AdminPanel: React.FC = () => {
         (acc, analytics) => acc + analytics.totalAttempts,
         0
       );
-
+ 
       const stats = calculateDashboardStats(
         currentPeriodTests,
         previousPeriodTests,
         totalUsers,
         totalSubmissions
+      );
+const activeCount =
+  (currentPeriodTests?.filter((t) => t.status === "Active").length || 0) +
+  (previousPeriodTests?.filter((t) => t.status === "Active").length || 0);
+
+setActiveTestsCount(activeCount);
+           console.log(
+        currentPeriodTests,
+        previousPeriodTests,
+        activeTestCount,
+        "sdfgsdgfdgfdgd"
       );
       setDashboardStats(stats);
       console.log(stats, "statsss");
@@ -831,13 +842,11 @@ const AdminPanel: React.FC = () => {
       setLoading(false);
     }
   };
-  console.log("Total Questions Data:", {
-    totalQuestions: dashboardStats.totalQuestions,
-  });
+  console.log("Total Questions Data:", dashboardStats);
   const dashboardStatsArray = [
     {
       title: "Total Tests",
-      value: dashboardStats.totalTests,
+      value: tests.length,
       icon: FileText,
       color: "blue",
       change: dashboardStats.testsChange,
@@ -845,7 +854,10 @@ const AdminPanel: React.FC = () => {
     },
     {
       title: "Total Questions",
-      value: dashboardStats.totalQuestions,
+      value: tests.reduce(
+    (sum, test) => sum + Math.min(test?.questions?.length || 0, 50),
+    0
+  ),
       icon: FileQuestion,
       color: "green",
       change: dashboardStats.questionsChange,
@@ -853,7 +865,7 @@ const AdminPanel: React.FC = () => {
     },
     {
       title: "Total Users",
-      value: dashboardStats?.totalUsers,
+      value: users?.length,
       icon: Users,
       color: "purple",
       change: "+0%",
@@ -1242,13 +1254,13 @@ const AdminPanel: React.FC = () => {
 
             {activeTab === "results" && (
               <ResultsManagement
-                // users={users}
-                // tests={tests.map((t) => ({
-                //   ...t,
-            
-                //   name: (t as any).name ?? t.title ?? "",
-                // }))}
-                // loading={loading}
+              // users={users}
+              // tests={tests.map((t) => ({
+              //   ...t,
+
+              //   name: (t as any).name ?? t.title ?? "",
+              // }))}
+              // loading={loading}
               />
             )}
 
