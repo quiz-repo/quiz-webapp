@@ -261,7 +261,7 @@ const AdminPanel: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showExportUsers, setShowExportUsers] = useState<boolean>(false);
   const [showUserAnalytics, setShowUserAnalytics] = useState<boolean>(false);
-  const [activeTestCount,setActiveTestsCount] = useState(0)
+  const [activeTestCount, setActiveTestsCount] = useState(0);
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalTests: 0,
     totalQuestions: 0,
@@ -541,19 +541,19 @@ const AdminPanel: React.FC = () => {
         (acc, analytics) => acc + analytics.totalAttempts,
         0
       );
- 
+
       const stats = calculateDashboardStats(
         currentPeriodTests,
         previousPeriodTests,
         totalUsers,
         totalSubmissions
       );
-const activeCount =
-  (currentPeriodTests?.filter((t) => t.status === "Active").length || 0) +
-  (previousPeriodTests?.filter((t) => t.status === "Active").length || 0);
+      const activeCount =
+        (currentPeriodTests?.filter((t) => t.status === "Active").length || 0) +
+        (previousPeriodTests?.filter((t) => t.status === "Active").length || 0);
 
-setActiveTestsCount(activeCount);
-           console.log(
+      setActiveTestsCount(activeCount);
+      console.log(
         currentPeriodTests,
         previousPeriodTests,
         activeTestCount,
@@ -855,9 +855,11 @@ setActiveTestsCount(activeCount);
     {
       title: "Total Questions",
       value: tests.reduce(
-    (sum, test) => sum + Math.min(test?.questions?.length || 0, 50),
-    0
-  ),
+        (sum, test) =>
+          sum + Math.min((test?.questions as any[])?.length || 0, 50),
+        0
+      ),
+
       icon: FileQuestion,
       color: "green",
       change: dashboardStats.questionsChange,
