@@ -373,9 +373,9 @@ const UserManagement: React.FC<UserManagementProps> = ({
 
                     {/* Score */}
                     <div className="text-sm text-slate-600 font-medium">
-                      {result.score}/{result.totalQuestions}
+                      {/* {result.score}/{result.totalQuestions} */}
                       <span className="text-slate-400 ml-1">
-                        ({result.percentage}%)
+                        {/* ({result.percentage}%) */}
                       </span>
                     </div>
 
@@ -386,7 +386,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                     </div>
 
                     {/* Pass / Fail */}
-                    <span
+                    {/* <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         result.status === "Pass"
                           ? "bg-green-100 text-green-700"
@@ -394,7 +394,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                       }`}
                     >
                       {result.status}
-                    </span>
+                    </span> */}
                   </div>
                 </div>
               ))}
