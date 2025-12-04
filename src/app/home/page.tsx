@@ -14,7 +14,6 @@ const OnlineTestLandingPage = () => {
 
   return (
     <div className="font-sans text-white bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 min-h-screen px-4 py-8 relative">
-      {/* Admin Login Button at Top Right */}
       <div className="absolute top-[41px] right-6 z-[9999]">
         <button
           onClick={handleAdminLogin}
@@ -24,7 +23,7 @@ const OnlineTestLandingPage = () => {
         </button>
       </div>
 
-      {/* Hero Section */}
+   
       <section className="bg-white/10 backdrop-blur-sm rounded-xl p-10 text-center shadow-lg border border-white/20">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
           Ace Your Exams with Confidence
@@ -40,7 +39,6 @@ const OnlineTestLandingPage = () => {
         </Link>
       </section>
 
-      {/* Features Section */}
       <section className="mt-16 grid gap-8 md:grid-cols-3">
         <div className="bg-white/10 backdrop-blur-md border border-white/10 p-6 rounded-lg shadow-md text-center">
           <h3 className="text-xl font-semibold mb-2">Timed Mock Tests</h3>
@@ -67,7 +65,7 @@ const OnlineTestLandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+ 
       <section className="mt-20 text-center">
         <h2 className="text-3xl font-bold mb-4">Ready to Test Your Skills?</h2>
         <p className="mb-6 text-lg text-white/80">
@@ -92,7 +90,7 @@ export default OnlineTestLandingPage;
 //     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 //           {questions.map((q:any) => {
 //             const userQ = detailedResults.find((d:any) => d.questionId === q.id);
-//             console.log("userQ", q);
+//     
 //             return (
 //               <div
 //                 key={q.id}

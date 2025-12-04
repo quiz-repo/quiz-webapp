@@ -33,7 +33,7 @@ const waitForAuth = (): Promise<boolean> => {
       return;
     }
     
-    console.log("Waiting for authentication...");
+    // console.log("Waiting for authentication...");
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       unsubscribe();
       if (user) {

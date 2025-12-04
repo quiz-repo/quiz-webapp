@@ -81,13 +81,13 @@ export default function Register() {
       return false;
     }
 
-const phone = formData.phone.trim();
-const phoneRegex = /^\+?\d{10,15}$/;
+    const phone = formData.phone.trim();
+    const phoneRegex = /^\+?\d{10,15}$/;
 
-if (!phoneRegex.test(phone)) {
-  setError("Please enter a valid phone number");
-  return false;
-}
+    if (!phoneRegex.test(phone)) {
+      setError("Please enter a valid phone number");
+      return false;
+    }
     return true;
   };
 
@@ -280,7 +280,7 @@ if (!phoneRegex.test(phone)) {
                   placeholder="Enter your mobile number"
                   required
                 /> */}
-           <div>
+              <div>
                 <label
                   htmlFor="phone"
                   className="block text-xs font-medium text-white mb-1"
@@ -300,7 +300,9 @@ if (!phoneRegex.test(phone)) {
                   }}
                   country={"in"}
                   value={formData.phone}
-                  onChange={(phone) => setFormData((prev) => ({ ...prev, phone: phone || "" }))}
+                  onChange={(phone) =>
+                    setFormData((prev) => ({ ...prev, phone: phone || "" }))
+                  }
                   dropdownStyle={{
                     bottom: "100%",
                     position: "absolute",
@@ -337,17 +339,11 @@ if (!phoneRegex.test(phone)) {
                 College Name
               </label>
               <Select
-                // className="w-full"
                 className="my-white-select"
                 placeholder="Select your college"
                 value={formData.college || undefined}
                 onChange={handleCollegeChange}
                 size="middle"
-                dropdownStyle={{
-                  background: "#653597",
-                  // color: "white",
-                  borderRadius: "8px",
-                }}
                 style={{
                   width: "100%",
                 }}
@@ -361,7 +357,7 @@ if (!phoneRegex.test(phone)) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 mt-[18px]">
               <div>
                 <label
                   htmlFor="password"

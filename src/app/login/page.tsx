@@ -38,58 +38,67 @@ export default function LoginPage() {
       [name]: value,
     }));
   };
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields");
+  if (!formData.email || !formData.password) {
+    toast.error("Please fill in all fields");
+    return;
+  }
+
+  setIsUserLoading(true);
+
+  try {
+    // Firebase login
+    const userCredential = await signInWithEmailAndPassword(
+      auth,
+      formData.email,
+      formData.password
+    );
+    
+    const user = userCredential.user;
+
+    // Get Firebase token + admin role safely
+    const tokenResult = await user.getIdTokenResult();
+    const isAdmin = tokenResult.claims.admin === true;
+
+    // ❌ Prevent admin from logging in as a user
+    if (isAdmin) {
+      toast.error("Admin accounts cannot log in from the user login page");
       return;
     }
-    if (formData.email === "admin@yopmail.com") {
-      toast.error("Email not valid for user login");
-      return; 
+
+    // Store token in cookies
+    const expires = rememberMe ? 7 : 1; // days
+    Cookies.set("token", tokenResult.token, {
+      expires,
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    toast.success("User login successful");
+    router.push("/dashboard");
+
+  } catch (error: any) {
+    console.error("Login Error:", error);
+
+    let errorMessage = "Login failed";
+
+    if (error.code === "auth/user-not-found") {
+      errorMessage = "No account found with this email";
+    } else if (error.code === "auth/wrong-password") {
+      errorMessage = "Incorrect password";
+    } else if (error.code === "auth/invalid-email") {
+      errorMessage = "Invalid email address";
+    } else if (error.code === "auth/too-many-requests") {
+      errorMessage = "Too many failed attempts. Please try again later";
     }
 
-    setIsUserLoading(true);
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const user = userCredential.user;
-      const idToken = await user.getIdToken();
-
-      const expires = rememberMe ? 7 : 1; // 7 days if remember me, else 1 day
-
-      Cookies.set("token", idToken, {
-        expires,
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      });
-
-      toast.success("User login successful");
-      router.push("/dashboard");
-    } catch (error: any) {
-      console.error("Login Error:", error);
-      let errorMessage = "Login failed";
-
-      if (error.code === "auth/user-not-found") {
-        errorMessage = "No account found with this email";
-      } else if (error.code === "auth/wrong-password") {
-        errorMessage = "Incorrect password";
-      } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Invalid email address";
-      } else if (error.code === "auth/too-many-requests") {
-        errorMessage = "Too many failed attempts. Please try again later";
-      }
-
-      toast.error(errorMessage);
-    } finally {
-      setIsUserLoading(false);
-    }
-  };
+    toast.error(errorMessage);
+  } finally {
+    setIsUserLoading(false);
+  }
+};
 
   const handleForgotPassword = () => {
     router.push("/forgot-password");

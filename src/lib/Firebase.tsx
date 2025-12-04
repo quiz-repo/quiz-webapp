@@ -41,20 +41,7 @@ const ensureAuthenticated = (): Promise<boolean> => {
     });
   });
 };
-// const isAdmin = async (): Promise<boolean> => {
-//   try {
-//     const user = auth.currentUser;
-//     if (!user) return false;
-//     console.log(
-//       "Logged in user email_",
-//       user.email
-//     );
-//     return user.email === "admin@yopmail.com";
-//   } catch (error) {
-//     console.error("Error checking admin status:", error);
-//     return false;
-//   }
-// };
+
 const isAdmin = async (): Promise<boolean> => {
   return new Promise((resolve) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {

@@ -130,7 +130,7 @@ const TestManagement: React.FC<TestManagementProps> = ({
   filteredQuestions,
   editingQuestion,
   setEditingQuestion,
-  setAnalysisTestId,
+  // setAnalysisTestId,
   analysisTestId,
   testAnalytics,
   setPendingDeleteTestId,
@@ -222,18 +222,18 @@ const TestManagement: React.FC<TestManagementProps> = ({
                           {test.status.charAt(0).toUpperCase() +
                             test.status.slice(1).toLowerCase()}
                         </span>
-                        <button
+                        {/* <button
                           className="px-3 cursor-pointer py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
                           onClick={() => setAnalysisTestId(test.id)}
                         >
                           Analyse
-                        </button>
-                        {analysisTestId && (
+                        </button> */}
+                        {/* {analysisTestId && (
                           <TestAnalysis
                             testId={analysisTestId}
                             onClose={() => setAnalysisTestId(null)}
                           />
-                        )}
+                        )} */}
                       </div>
                     </div>
                     <button
@@ -352,7 +352,6 @@ const TestManagement: React.FC<TestManagementProps> = ({
               </button>
             </div>
 
-            {/* Scrollable Content */}
             <div className="space-y-4 flex-1 overflow-y-auto pr-2">
               {/* Title */}
               <div>
@@ -433,7 +432,6 @@ const TestManagement: React.FC<TestManagementProps> = ({
                 />
               </div>
 
-              {/* Status */}
               <div>
                 <label className="block text-sm font-medium text-slate-700">
                   Status
