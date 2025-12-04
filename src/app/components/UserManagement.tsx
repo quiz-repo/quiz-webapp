@@ -61,7 +61,6 @@ const UserManagement: React.FC<UserManagementProps> = ({
   users,
   searchTerm,
   setSearchTerm,
-
   filteredUsers,
   selectedUser,
   setSelectedUser,
@@ -69,7 +68,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
     console.log("users:", users);
   // console.log("Filtered users:", filteredUsers);
-  // console.log("Current search term:", searchTerm);
+ 
   const handleViewDetails = (user: User) => {
     console.log(setSelectedUser,"ygyyuguyg")
     setSelectedUser({
@@ -103,7 +102,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
   return (
     <div className="relative">
       <div className={isModalOpen ? "blur-sm" : ""}>
-        {/* Header Section */}
+ 
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
