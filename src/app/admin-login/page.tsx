@@ -24,7 +24,7 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      if (email !== "admin@yopmail.com" || password !== "123456") {
+      if (email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL || password !== process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
         throw new Error("Invalid admin credentials");
       }
       const userCredential = await signInWithEmailAndPassword(

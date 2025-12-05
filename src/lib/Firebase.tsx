@@ -15,12 +15,12 @@ import { TestResult } from "./FirebaseDataService";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDpnBusw0FWGY0qqQd-rtuljkC_2XlEH10",
-  authDomain: "newproject-f0d20.firebaseapp.com",
-  projectId: "newproject-f0d20",
-  storageBucket: "newproject-f0d20.appspot.com",
-  messagingSenderId: "863958675589",
-  appId: "1:863958675589:web:4f6f20e0ea62c8003c39ec",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
@@ -55,7 +55,7 @@ const isAdmin = async (): Promise<boolean> => {
       console.log("isAdmin: Current user email:", user.email);
 
       // Option 1: check by email (if you only have one admin)
-      if (user.email === "admin@yopmail.com") {
+      if (user.email ===process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
         resolve(true);
         return;
       }
@@ -197,7 +197,7 @@ async function getUserTestResultsById(userId: string): Promise<TestResult[]> {
       throw new Error("User must be authenticated");
     }
 
-    console.log("getUserTestResultsById: Fetching test results for user:", userId);
+    console.log("getUserTestResultsById", userId);
     const q = query(
       collection(db, "testResults"),
       where("userId", "==", userId),
@@ -230,7 +230,7 @@ async function getAllTestResults(): Promise<TestResult[]> {
       throw new Error("Access denied: Admin privileges required");
     }
 
-    console.log("getAllTestResults: Fetching all test results");
+    console.log("getAllTestResults");
     const querySnapshot = await getDocs(collection(db, "testResults"));
     
     const results = querySnapshot.docs.map((doc) => ({
@@ -238,7 +238,7 @@ async function getAllTestResults(): Promise<TestResult[]> {
       ...doc.data(),
     })) as TestResult[];
     
-    console.log("getAllTestResults: Successfully fetched", results.length, "results");
+    console.log("fetched", results.length, "results");
     return results;
   } catch (error) {
     console.error("Error getting all test results:", error);
@@ -246,25 +246,7 @@ async function getAllTestResults(): Promise<TestResult[]> {
   }
 }
 
-// async function getTotalUsers(): Promise<number> {
-//   try {
-//     const isAuthenticated = await ensureAuthenticated();
-//     if (!isAuthenticated) {
-//       throw new Error("User must be authenticated to get total users");
-//     }
 
-//     const adminStatus = await isAdmin();
-//     if (!adminStatus) {
-//       throw new Error("Access denied: Admin privileges required");
-//     }
-    
-//     const querySnapshot = await getDocs(collection(db, "users"));
-//     return querySnapshot.size;
-//   } catch (error) {
-//     console.error("Error getting total users:", error);
-//     return 0;
-//   }
-// }
 
 async function getTotalUsers(): Promise<number> {
   try {
@@ -306,7 +288,7 @@ const fetchTestResult = async (resultId: string): Promise<TestResult> => {
     if (docSnap.exists()) {
       const data = docSnap.data();
       
-      // Check if user is admin or owner of the test result
+
       const adminStatus = await isAdmin();
       if (!adminStatus && data.userId !== user.uid) {
         throw new Error("Unauthorized to access this test result");
