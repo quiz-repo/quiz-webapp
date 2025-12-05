@@ -85,7 +85,7 @@ export async function middleware(request: NextRequest) {
 
   try {
     const decodedToken = await verifyFirebaseToken(token);
-    const isAdmin = decodedToken.email === "admin@yopmail.com";
+    const isAdmin = decodedToken.email ===  process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
     // ❗ admin-only routes
     if (routeType === "admin" && !isAdmin) {
