@@ -1,4 +1,4 @@
-// admin-scripts/setAdmin.js
+
 const admin = require("firebase-admin");
 const serviceAccount = require("./serviceAccountKey.json"); 
 
@@ -10,9 +10,9 @@ const makeUserAdmin = async (email:any) => {
   try {
     const user = await admin.auth().getUserByEmail(email);
     await admin.auth().setCustomUserClaims(user.uid, { admin: true });
-    console.log(`✅ User ${email} is now an admin.`);
+    console.log(` User ${email} is now an admin.`);
   } catch (error) {
-    console.error("❌ Error assigning admin role:", error);
+    console.error(" Error assigning admin role:", error);
   }
 };
 

@@ -385,7 +385,7 @@ body {
   border-radius: 8px !important;
 }
 
-/* Dropdown items */
+/* Test Mangment Dropdown items */
 .ant-select-item {
   color: white !important;
 }
@@ -393,4 +393,27 @@ body {
 .ant-select-item-option-active,
 .ant-select-item-option-selected {
   background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.select-dropdown .ant-select-selector {
+  background: white !important;
+  color: black !important;
+}
+
+/* Dropdown options */
+.ant-select-dropdown .ant-select-item {
+  background: white !important;
+  color: black !important;
+}
+
+/* Selected item hover */
+.ant-select-item-option-active {
+  background: #f5f5f5 !important;
+  color: black !important;
+}
+
+/* Selected item */
+.ant-select-item-option-selected {
+  background: #e6e6e6 !important;
+  color: black !important;
 }

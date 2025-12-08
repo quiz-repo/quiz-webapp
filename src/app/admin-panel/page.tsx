@@ -40,10 +40,18 @@ import {
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "react-toastify";
-import AdminModal from "../components/modals/AdminModal";
-import UserManagement from "../components/UserManagement";
-import TestManagement from "../components/TestManagement";
-import ResultsManagement from "../resultsManagment/page";
+import Loader from "@/components/Loader";
+import Sidebar from "@/components/Sidebar";
+import StatsCards from "@/components/StatsCards";
+import RecentTests from "@/components/RecentTests";
+import PerformanceOverview from "@/components/PerformanceOverview";
+import SystemHealth from "@/components/SystemHealth";
+import TestManagement from "../components/tests/TestManagement";
+import UserManagement from "../components/tests/UserManagement";
+import ResultsManagementPage from "../resultsManagment/page";
+import AdminModal from "@/components/modals/AdminModal";
+
+
 
 interface Test {
   id: string;
@@ -51,17 +59,16 @@ interface Test {
   subject?: string;
   duration?: number;
   difficulty?: string;
-  status: "Active" | "Draft";
+   status: "Active" | "Draft";
   description?: string;
   instructions?: string[];
-  questions: Question[] | number;
+  questions: any[] | number;
   created: string;
   createdAt?: Timestamp;
   length?: number;
 }
 
 interface Question {
-  // length:number;
   id: string;
   testId: string;
   question: string;
@@ -136,6 +143,8 @@ interface TestAnalytics {
 }
 
 type Row = Record<string, string>;
+
+/* ------------------ Utility functions ------------------ */
 
 const calculateDashboardStats = (
   currentTests: Test[],
@@ -233,6 +242,8 @@ const getTestsFromPeriod = async (
   }
 };
 
+/* ------------------ Main component ------------------ */
+
 const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [tests, setTests] = useState<Test[]>([]);
@@ -278,7 +289,7 @@ const AdminPanel: React.FC = () => {
     activeTestsChangeDirection: "up",
     draftTestsChangeDirection: "up",
   });
-  console.log(dashboardStats, "dashboardStatsttt");
+
   const router = useRouter();
 
   const [newQuestion, setNewQuestion] = useState<NewQuestion>({
@@ -345,17 +356,6 @@ const AdminPanel: React.FC = () => {
       e.target.value = "";
     }
   };
-
-  // const fetchAndParseFromURL = async () => {
-  //   if (!downloadURL) return;
-  //   const res = await fetch(downloadURL);
-  //   const text = await res.text();
-  //   const parsed = Papa.parse<Row>(text, {
-  //     header: true,
-  //     skipEmptyLines: true,
-  //   });
-  //   setRows(parsed.data);
-  // };
 
   const loadUsers = async (): Promise<void> => {
     try {
@@ -510,7 +510,6 @@ const AdminPanel: React.FC = () => {
         testsData.map(async (test) => {
           try {
             const analytics = await getTestAnalytics(test.id);
-            // Ensure data is received before setting
             if (analytics) {
               analyticsData[test.id] = analytics;
             }
@@ -523,7 +522,7 @@ const AdminPanel: React.FC = () => {
         })
       );
       setTestAnalytics(analyticsData);
-      // console.log(analyticsData, "dataaaaaaaa");
+
       const today = new Date();
       const thirtyDaysAgo = new Date(today);
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -536,7 +535,6 @@ const AdminPanel: React.FC = () => {
       );
 
       const totalUsers = users?.length || 0;
-      console.log(totalUsers, "totalusersss");
       const totalSubmissions = Object.values(analyticsData).reduce(
         (acc, analytics) => acc + analytics.totalAttempts,
         0
@@ -553,14 +551,7 @@ const AdminPanel: React.FC = () => {
         (previousPeriodTests?.filter((t) => t.status === "Active").length || 0);
 
       setActiveTestsCount(activeCount);
-      console.log(
-        currentPeriodTests,
-        previousPeriodTests,
-        activeTestCount,
-        "sdfgsdgfdgfdgd"
-      );
       setDashboardStats(stats);
-      console.log(stats, "statsss");
     } catch (error) {
       console.error("Error loading tests:", error);
       toast.error("Failed to load tests");
@@ -568,6 +559,7 @@ const AdminPanel: React.FC = () => {
       setLoading(false);
     }
   };
+
   const memoizedFilteredUsers = useMemo(() => {
     return (
       users?.filter((user) => {
@@ -842,7 +834,7 @@ const AdminPanel: React.FC = () => {
       setLoading(false);
     }
   };
-  console.log("Total Questions Data:", dashboardStats);
+
   const dashboardStatsArray = [
     {
       title: "Total Tests",
@@ -885,101 +877,16 @@ const AdminPanel: React.FC = () => {
 
   return (
     <div className="h-[100%] bg-slate-50 overflow-hidden">
-      {loading && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 shadow-2xl border border-slate-200">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
-              <p className="text-slate-600 font-medium">Loading...</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {loading && <Loader />}
 
       <div className="flex h-[100%]">
-        <div className="bg-white border-r border-slate-200 shadow-sm flex flex-col justify-between h-screen fixed">
-          <div className="p-8">
-            <div className="flex items-center space-x-4 mb-10">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">Quizz Pro</h1>
-                <p className="text-sm text-slate-500">Admin Dashboard</p>
-              </div>
-            </div>
-            <nav className="space-y-2">
-              {[
-                { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-                { id: "tests", label: "Tests", icon: FileText },
-                { id: "users", label: "Users", icon: Users },
-                { id: "results", label: "Result", icon: Users },
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl transition-all duration-200 text-left h-[100%] cursor-pointer ${
-                    activeTab === item.id
-                      ? "bg-blue-50 text-blue-700 border border-blue-200 shadow-sm"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <span
-                    className={`flex items-center justify-center ${
-                      activeTab === item.id ? "text-blue-600" : "text-slate-400"
-                    }`}
-                  >
-                    <item.icon
-                      className={`${
-                        item.id === "results"
-                          ? "text-[20px] leading-none" // Fix AntD icon sizing
-                          : "w-5 h-5"
-                      }`}
-                      style={{
-                        fontSize: item.id === "results" ? 20 : undefined,
-                      }}
-                    />
-                  </span>
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              ))}
-            </nav>
-          </div>
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onLogout={() => setIsModalVisible(true)}
+          loading={loading}
+        />
 
-          <div className="p-8">
-            <button
-              onClick={() => setIsModalVisible(true)}
-              disabled={loading}
-              className="w-full cursor-pointer bg-red-50 text-red-700 border border-red-200 px-4 py-3.5 rounded-xl font-medium hover:bg-red-100 transition-all disabled:opacity-50 flex items-center justify-center h-[100%]"
-            >
-              {loading ? (
-                <svg
-                  className="animate-spin mr-2 w-5 h-5 text-red-700"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  ></path>
-                </svg>
-              ) : (
-                <LogOutIcon className="mr-2 w-5 h-5" />
-              )}
-              {loading ? "Signing Out..." : "Sign Out"}
-            </button>
-          </div>
-        </div>
         <div className="flex-1 ml-64 overflow-y-auto">
           <div className="p-8">
             {activeTab === "dashboard" && (
@@ -992,57 +899,8 @@ const AdminPanel: React.FC = () => {
                     Monitor your test management system performance
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {dashboardStatsArray.map((stat, index) => {
-                    console.log("Stat Item:", stat); //
 
-                    return (
-                      <div
-                        key={stat.title}
-                        className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <div
-                            className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                              stat.color === "blue"
-                                ? "bg-blue-50 text-blue-600"
-                                : stat.color === "green"
-                                ? "bg-emerald-50 text-emerald-600"
-                                : stat.color === "yellow"
-                                ? "bg-amber-50 text-amber-600"
-                                : "bg-purple-50 text-purple-600"
-                            }`}
-                          >
-                            <stat.icon className="w-6 h-6" />
-                          </div>
-                          <div
-                            className={`flex items-center text-sm font-medium ${
-                              stat.trend === "up"
-                                ? "text-emerald-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            <TrendingUp
-                              className={`w-4 h-4 mr-1 ${
-                                stat.trend === "down" ? "rotate-180" : ""
-                              }`}
-                            />
-                            {stat.change}
-                          </div>
-                        </div>
-
-                        <div>
-                          <p className="text-3xl font-bold text-slate-900 mb-1">
-                            {stat.value}
-                          </p>
-                          <p className="text-slate-500 font-medium">
-                            {stat.title}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <StatsCards stats={dashboardStatsArray as any} />
 
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
                   <div className="p-6 border-b border-slate-200">
@@ -1051,145 +909,21 @@ const AdminPanel: React.FC = () => {
                     </h2>
                   </div>
                   <div className="p-6 max-h-96 overflow-y-auto">
-                    <div className="space-y-4">
-                      {tests.slice(0, 5).map((test) => (
-                        <div
-                          key={test.id}
-                          className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                              <FileText className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-slate-900">
-                                {test.title}
-                              </h3>
-                              <p className="text-slate-500 text-sm">
-                                {test.subject} • {test.created} •{" "}
-                                {Array.isArray(test.questions)
-                                  ? test.questions.length
-                                  : typeof test.questions === "number"
-                                  ? test.questions
-                                  : 0}{" "}
-                                questions
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <span
-                              className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                                test.status?.toLowerCase() === "active"
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-amber-100 text-amber-800"
-                              }`}
-                            >
-                              {test.status.charAt(0).toUpperCase() +
-                                test.status.slice(1).toLowerCase()}
-                            </span>
-                            {testAnalytics[test.id] &&
-                              (console.log(
-                                testAnalytics[test.id].averageScore,
-                                "vhjhvjhvhj"
-                              ),
-                              (
-                                <div className="text-xs text-slate-600">
-                                  {testAnalytics[test.id].totalAttempts}{" "}
-                                  attempts •{" "}
-                                  {testAnalytics[test.id].averageScore.toFixed(
-                                    1
-                                  )}{" "}
-                                  avg % avg
-                                </div>
-                              ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <RecentTests tests={tests} testAnalytics={testAnalytics} />
                   </div>
                 </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                      <Activity className="mr-2 text-blue-600" /> Test
-                      Performance Overview
-                    </h3>
-                    <div className="space-y-4">
-                      {tests.slice(0, 3).map((test) => {
-                        const analytics = testAnalytics[test.id];
-                        return (
-                          <div
-                            key={test.id}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium text-slate-900 truncate">
-                                {test.title}
-                              </p>
-                              <p className="text-sm text-slate-500">
-                                {test.subject}
-                              </p>
-                            </div>
-                            {analytics && (
-                              <div className="text-right">
-                                <p className="text-sm font-medium text-slate-900">
-                                  {Math.round(analytics.averageScore)}% avg
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {analytics.totalAttempts} attempts
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center">
-                      <Target className="mr-2 text-green-600" /> System Health
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-600">Active Tests</span>
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                          <span className="font-medium">
-                            {dashboardStats.activeTests}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-600">Draft Tests</span>
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-                          <span className="font-medium">
-                            {dashboardStats.draftTests}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-600">Total Users</span>
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
-                          <span className="font-medium">
-                            {dashboardStats.totalUsers}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-600">
-                          Total Submissions
-                        </span>
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
-                          <span className="font-medium">
-                            {dashboardStats.totalSubmissions}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <PerformanceOverview
+                    tests={tests}
+                    testAnalytics={testAnalytics}
+                  />
+                  <SystemHealth
+                    activeTests={dashboardStats.activeTests}
+                    draftTests={dashboardStats.draftTests}
+                    totalUsers={dashboardStats.totalUsers}
+                    totalSubmissions={dashboardStats.totalSubmissions}
+                  />
                 </div>
               </div>
             )}
@@ -1254,17 +988,7 @@ const AdminPanel: React.FC = () => {
               />
             )}
 
-            {activeTab === "results" && (
-              <ResultsManagement
-              // users={users}
-              // tests={tests.map((t) => ({
-              //   ...t,
-
-              //   name: (t as any).name ?? t.title ?? "",
-              // }))}
-              // loading={loading}
-              />
-            )}
+            {activeTab === "results" && <ResultsManagementPage />}
 
             {isModalVisible && (
               <AdminModal
