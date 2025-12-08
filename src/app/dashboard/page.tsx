@@ -93,7 +93,6 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
       console.log("📚 Starting data load process");
       setError(null);
 
-      // Fetch tests and user results in parallel
       const [testsResult, resultsResult] = await Promise.allSettled([
         fetchTests(),
         fetchUserTestResults(),
@@ -105,7 +104,7 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
       }
 
       if (resultsResult.status === "rejected") {
-        console.error("⚠️  Failed to fetch results:", resultsResult.reason);
+        console.error("  Failed to fetch results:", resultsResult.reason);
       }
 
   
