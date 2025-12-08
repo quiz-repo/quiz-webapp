@@ -18,31 +18,65 @@ const AdminLogin = () => {
 
   const router = useRouter();
 
+  // const handleLogin = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   setError("");
+
+  //   try {
+  //     if (email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL || password !== process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
+  //       throw new Error("Invalid admin credentials");
+  //     }
+  //     const userCredential = await signInWithEmailAndPassword(
+  //       auth,
+  //       email,
+  //       password
+  //     );
+
+  //     toast.success("Admin login successful!");
+  //     router.push("/admin-panel");
+  //   } catch (err: any) {
+  //     const message = err.message || "Login failed. Please try again.";
+  //     setError(message);
+  //     toast.error(message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+  e.preventDefault();
+  setLoading(true);
+  setError("");
 
-    try {
-      if (email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL || password !== process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-        throw new Error("Invalid admin credentials");
-      }
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      toast.success("Admin login successful!");
-      router.push("/adminPanel");
-    } catch (err: any) {
-      const message = err.message || "Login failed. Please try again.";
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
+ 
+    const token = await userCredential.user.getIdToken();
+
+  
+    const res = await fetch("/api/check-admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+
+    const data = await res.json();
+    if (!data.isAdmin) {
+      throw new Error("You are not authorized as admin.");
     }
-  };
+
+    toast.success("Admin login successful!");
+    router.push("/admin-panel");
+  } catch (err: any) {
+    const message = err.message || "Login failed. Please try again.";
+    setError(message);
+    toast.error(message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     // ... rest of the component is unchanged

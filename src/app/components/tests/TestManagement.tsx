@@ -10,9 +10,9 @@ import {
   X,
   Upload,
 } from "lucide-react";
-import { toast } from "react-toastify";
-import AdminModal from "../components/modals/AdminModal";
-import TestAnalysis from "../components/TestAnalysis";
+// import { toast } from "react-toastify";
+// import AdminModal from "../components/modals/AdminModal";
+// import TestAnalysis from "../components/TestAnalysis";
 import { Select } from "antd";
 
 interface Test {
@@ -155,7 +155,7 @@ const TestManagement: React.FC<TestManagementProps> = ({
           >
             <Plus className="w-5 h-5 mr-2" /> Create Test
           </button>
-          
+
           <label className="bg-green-600 cursor-pointer hover:bg-green-700 text-white px-5 py-3 rounded-xl font-medium flex items-center transition-colors shadow-lg shadow-green-500/25">
             <Upload className="w-5 h-5 mr-2" />
             Upload CSV
@@ -168,7 +168,7 @@ const TestManagement: React.FC<TestManagementProps> = ({
           </label>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
           <div className="p-6 border-b border-slate-200">
@@ -253,7 +253,7 @@ const TestManagement: React.FC<TestManagementProps> = ({
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
           <div className="p-6 border-b border-slate-200">
             <div className="flex justify-between items-center">
@@ -423,7 +423,7 @@ const TestManagement: React.FC<TestManagementProps> = ({
                   onChange={(value) =>
                     setNewTest({ ...newTest, difficulty: value })
                   }
-                  className="mt-1 block w-full rounded-md [&_.ant-select-selector]:rounded-md [&_.ant-select-selector]:px-3 [&_.ant-select-selector]:py-2"
+                  className="select-dropdown"
                   options={[
                     { value: "Beginner", label: "Beginner" },
                     { value: "Intermediate", label: "Intermediate" },
@@ -493,7 +493,7 @@ const TestManagement: React.FC<TestManagementProps> = ({
                 <button
                   type="button"
                   onClick={addInstruction}
-                  className="mt-2 text-blue-600 hover:text-blue-800 flex items-center"
+                  className="cursor-pointer mt-2 text-blue-600 hover:text-blue-800 flex items-center"
                 >
                   <Plus size={14} className="mr-1" /> Add Instruction
                 </button>

@@ -44,36 +44,30 @@ const ensureAuthenticated = (): Promise<boolean> => {
 
 const isAdmin = async (): Promise<boolean> => {
   return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       unsubscribe();
+
       if (!user) {
-        console.log("isAdmin: No user logged in");
         resolve(false);
         return;
       }
 
-      console.log("isAdmin: Current user email:", user.email);
+      // Get Firebase token
+      const token = await user.getIdToken();
 
-      // Option 1: check by email (if you only have one admin)
-      if (user.email ===process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-        resolve(true);
-        return;
-      }
+      // Ask the server to verify
+      const res = await fetch("/api/check-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
 
-      // Option 2: check by role from Firestore
-      // const userDocRef = doc(db, "users", user.uid);
-      // getDoc(userDocRef).then(docSnap => {
-      //   if (docSnap.exists() && docSnap.data()?.role === "admin") {
-      //     resolve(true);
-      //   } else {
-      //     resolve(false);
-      //   }
-      // });
-
-      resolve(false);
+      const data = await res.json();
+      resolve(data.isAdmin);
     });
   });
 };
+
 
 
 async function getData() {

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, useCallback, useEffect } from "react";
 import {
   BarChart3,
@@ -410,7 +410,7 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {questions.map((q: any, index: number) => {
           const userQ = detailedResults.find((d: any) => d.questionId === q.id);
-         const userAttempt = Number(userQ?.attempt);
+          const userAttempt = Number(userQ?.attempt);
           const isCorrect = userAttempt === q.correctAnswer;
 
           return (
@@ -577,7 +577,7 @@ const TestDetailsView: React.FC<{
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-100">
-              {summary.testResults?.map((result, index) => (
+              {[...summary.testResults]?.reverse().map((result, index) => (
                 <tr
                   key={result?.id}
                   className={`hover:bg-slate-50 transition duration-150 ${
@@ -650,8 +650,7 @@ const ResultsManagementPage: React.FC = () => {
     null
   );
   const [allTestResults, setAllTestResults] = useState<TestEntry[]>([]);
- const [loading, setLoading] = useState(true); // TypeScript infers boolean
-
+  const [loading, setLoading] = useState(true); // TypeScript infers boolean
 
   useEffect(() => {
     const fetchResults = async () => {
