@@ -11,8 +11,8 @@ import {
   CheckCircle,
   BarChart3,
 } from "lucide-react";
-import { UserSummaryTestResult } from "./tests/type";
 import { Avatar } from "antd";
+import { UserSummaryTestResult } from "./type";
 
 interface TestResult {
   testName: string;
