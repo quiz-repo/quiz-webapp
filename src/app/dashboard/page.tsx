@@ -60,7 +60,6 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
     return () => unsubscribe();
   }, [router]);
 
-  // Timer effect
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
     if (testStarted && timeRemaining > 0) {
