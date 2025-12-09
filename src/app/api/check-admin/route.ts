@@ -12,9 +12,10 @@ export async function POST(req: Request) {
     const { token } = await req.json();
     const decoded = await getAuth().verifyIdToken(token);
 
-    // DEBUG LOGS (will show in terminal)
+
     console.log("Decoded email:", decoded.email);
     console.log("ADMIN_EMAIL:", process.env.NEXT_PUBLIC_ADMIN_EMAIL);
+    console.log("ADMIN_private key:", process.env.FIREBASE_ADMIN_PRIVATE_KEY);
 
     const isAdmin = decoded.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
