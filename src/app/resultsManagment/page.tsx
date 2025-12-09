@@ -109,7 +109,7 @@ const secondsToTime = (totalSec: number): string => {
   )}`;
 };
 
-// --- FIREBASE DATA FETCHING (moved inside component scope) ---
+
 
 const getTestsWithResults = async (): Promise<TestEntry[]> => {
   try {
