@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useCallback, useEffect } from "react";
+import { Pagination } from "antd";
 import {
   BarChart3,
   ArrowLeft,
@@ -504,6 +505,15 @@ const TestDetailsView: React.FC<{
   const uniqueParticipatedUsers = new Set(
     summary.testResults?.map((r) => r.userId)
   ).size;
+  const pageSize = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const reversedResults = [...summary.testResults].reverse();
+
+  const paginatedResults = reversedResults.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="space-y-6">
@@ -559,6 +569,9 @@ const TestDetailsView: React.FC<{
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-100">
               <tr>
+                  <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-slate-600">
+                  S.NO
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider min-w-[200px]">
                   User & Email
                 </th>
@@ -576,23 +589,30 @@ const TestDetailsView: React.FC<{
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-slate-100">
-              {[...summary.testResults]?.reverse().map((result, index) => (
+             <tbody className="bg-white divide-y divide-slate-100">
+              {paginatedResults.map((result, index) => (
                 <tr
-                  key={result?.id}
+                  key={result.id}
                   className={`hover:bg-slate-50 transition duration-150 ${
                     index % 2 === 0 ? "bg-white" : "bg-slate-50"
                   }`}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* SNO */}
+                  <td className="px-6 py-4 text-sm font-semibold text-slate-800">
+                    {(currentPage - 1) * pageSize + (index + 1)}
+                  </td>
+
+                  {/* USER INFO */}
+                  <td className="px-6 py-4">
                     <p className="text-sm font-semibold text-slate-900">
                       {result?.userDetails?.displayName || "Unknown User"}
                     </p>
                     <p className="text-xs text-slate-500 flex items-center">
-                      <Mail className="w-3 h-3 mr-1" />
+                      <Mail className="w-3 h-3 mr-1" />{" "}
                       {result?.userDetails?.email || "N/A"}
                     </p>
                   </td>
+
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-bold text-emerald-600">
@@ -638,6 +658,15 @@ const TestDetailsView: React.FC<{
               )}
             </tbody>
           </table>
+           <div className="p-4 flex justify-end">
+            <Pagination
+              current={currentPage}
+              total={summary.testResults.length}
+              pageSize={pageSize}
+              showSizeChanger={false}
+              onChange={(page) => setCurrentPage(page)}
+            />
+          </div>
         </div>
       </div>
     </div>

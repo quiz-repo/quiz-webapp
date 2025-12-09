@@ -55,7 +55,7 @@ const AdminLogin = () => {
  
     const token = await userCredential.user.getIdToken();
 
-  
+  console.log(token,"hjguyguygu")
     const res = await fetch("/api/check-admin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,12 +79,12 @@ const AdminLogin = () => {
 };
 
   return (
-    // ... rest of the component is unchanged
-    <div className="min-h-screen bg-gradient-to-br from-[#E0E9FF] via-[#F0E6FF] to-[#E6F7FF] flex items-center justify-center px-4 sm:px-6 lg:px-8">
+
+    <div className="min-h-screen bg-linear-to-br from-[#E0E9FF] via-[#F0E6FF] to-[#E6F7FF] flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="bg-[#F7F9FF] rounded-2xl p-8 shadow-lg border border-[#E4E8F5]">
           <div className="flex justify-center mb-6">
-            <div className="bg-gradient-to-r from-blue-400 to-indigo-400 text-white px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm">
+            <div className="bg-linear-to-r from-blue-400 to-indigo-400 text-white px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm">
               <Shield className="w-4 h-4" />
               Admin Panel
             </div>
