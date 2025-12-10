@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const token = await currentUser.getIdToken();
           Cookies.set("token", token, { expires: 1 });
           localStorage.setItem("token", token);
-          const isAdmin = currentUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+          const isAdmin = currentUser.email === process.env.ADMIN_EMAIL;
           localStorage.setItem("isAdmin", isAdmin.toString());
         } else {
           setUser(null);

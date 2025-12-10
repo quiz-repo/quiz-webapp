@@ -58,11 +58,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     
     const user = userCredential.user;
 
-    // Get Firebase token + admin role safely
+ 
     const tokenResult = await user.getIdTokenResult();
     const isAdmin = tokenResult.claims.admin === true;
 
-    // ❌ Prevent admin from logging in as a user
+   
     if (isAdmin) {
       toast.error("Admin accounts cannot log in from the user login page");
       return;
@@ -165,7 +165,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         <div
@@ -179,23 +179,23 @@ const handleSubmit = async (e: React.FormEvent) => {
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        {/* Login Card */}
+    
         <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20 transform transition-all duration-300 hover:scale-105">
-          {/* Header */}
+        
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-2xl mb-4 transform transition-transform duration-300 hover:rotate-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-r from-purple-500 to-cyan-500 rounded-2xl mb-4 transform transition-transform duration-300 hover:rotate-12">
               <Lock className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
             <p className="text-gray-300">Sign in to your account</p>
           </div>
 
-          {/* Form */}
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+    
             <div className="relative group">
               <div
-                className={`absolute inset-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-xl blur transition-all duration-300 ${
+                className={`absolute inset-0 bg-linear-to-r from-purple-500/20 to-cyan-500/20 rounded-xl blur transition-all duration-300 ${
                   focusedField === "email" ? "opacity-100" : "opacity-0"
                 }`}
               ></div>
@@ -224,7 +224,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             {/* Password Field */}
             <div className="relative group">
               <div
-                className={`absolute inset-0 bg-gradient-to-r from-purple-500/20 to-cyan-500/20 rounded-xl blur transition-all duration-300 ${
+                className={`absolute inset-0 bg-linear-to-r from-purple-500/20 to-cyan-500/20 rounded-xl blur transition-all duration-300 ${
                   focusedField === "password" ? "opacity-100" : "opacity-0"
                 }`}
               ></div>
@@ -272,7 +272,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <div
                     className={`w-4 h-4 border rounded transition-all duration-300 ${
                       rememberMe
-                        ? "bg-gradient-to-r from-purple-500 to-cyan-500 border-purple-400"
+                        ? "bg-linear-to-r from-purple-500 to-cyan-500 border-purple-400"
                         : "bg-white/10 border-white/20 group-hover:border-purple-400"
                     }`}
                   >
@@ -308,8 +308,8 @@ const handleSubmit = async (e: React.FormEvent) => {
               disabled={isUserLoading}
               className="w-full cursor-pointer relative group overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl"></div>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-cyan-400 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-linear-to-r from-purple-600 to-cyan-600 rounded-xl"></div>
+              <div className="absolute inset-0 bg-linear-to-r from-purple-400 to-cyan-400 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative px-6 py-4 text-white font-semibold text-lg rounded-xl transform transition-transform duration-300 group-hover:scale-105 group-active:scale-95">
                 {isUserLoading ? (
                   <div className="flex items-center justify-center">

@@ -13,10 +13,10 @@ export async function POST(req: Request) {
     const decoded = await getAuth().verifyIdToken(token);
 
     console.log("Decoded email:", decoded.email);
-    console.log("ADMIN_EMAIL:", process.env.NEXT_PUBLIC_ADMIN_EMAIL);
-    // console.log("Aryan private key:", process.env.FIREBASE_ADMIN_PRIVATE_KEY);
+    console.log("ADMIN_EMAIL:", process.env.ADMIN_EMAIL);
+ 
 
-    const isAdmin = decoded.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const isAdmin = decoded.email === process.env.ADMIN_EMAIL;
 
     return NextResponse.json({ isAdmin });
   } catch (error: any) {

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Shield, Lock, Mail } from "lucide-react";
 import { auth } from "@/lib/Firebase";
@@ -45,38 +45,39 @@ const AdminLogin = () => {
   // };
 
   const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError("");
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signOut(auth);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
- 
-    const token = await userCredential.user.getIdToken();
+      await userCredential.user.reload();
+      const token = await userCredential.user.getIdToken();
 
-  console.log(token,"hjguyguygu")
-    const res = await fetch("/api/check-admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
 
-    const data = await res.json();
-    if (!data.isAdmin) {
-      throw new Error("You are not authorized as admin.");
+      const res = await fetch("/api/check-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      const data = await res.json();
+      if (!data.isAdmin) {
+        throw new Error("You are not authorized as admin.");
+      }
+
+      toast.success("Admin login successful!");
+      router.push("/admin-panel");
+    } catch (err: any) {
+      const message = err.message || "Login failed. Please try again.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
-
-    toast.success("Admin login successful!");
-    router.push("/admin-panel");
-  } catch (err: any) {
-    const message = err.message || "Login failed. Please try again.";
-    setError(message);
-    toast.error(message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
 

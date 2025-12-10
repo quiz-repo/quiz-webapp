@@ -68,19 +68,15 @@ export async function middleware(request: NextRequest) {
 
   try {
     const decodedToken = await verifyFirebaseToken(token);
-    const isAdmin = decodedToken.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const isAdmin = decodedToken.email === process.env.ADMIN_EMAIL;
 
-    // ❌ Non-admin trying to open admin panel
     if (routeType === "admin" && !isAdmin) {
       return NextResponse.redirect(new URL("/home", request.url));
     }
 
-    // 🔁 Admin visiting /admin-login → redirect to admin panel
     if (pathname === "/admin-login" && isAdmin) {
       return NextResponse.redirect(new URL("/admin-panel", request.url));
     }
-
-    // ❌ Admin trying to open user dashboard → redirect to admin panel
     if (routeType === "protected" && isAdmin) {
       return NextResponse.redirect(new URL("/admin-panel", request.url));
     }
