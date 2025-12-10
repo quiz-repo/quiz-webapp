@@ -58,7 +58,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
       return;
     }
     if (isPublic) {
-      if (isAdmin && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+      if (isAdmin && user.email === process.env.ADMIN_EMAIL) {
         router.replace("/admin-panel");
       } else {
         router.replace("/dashboard");
@@ -68,7 +68,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
     if (
       pathname.startsWith("/dashboard") &&
       isAdmin &&
-      user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL
+      user.email === process.env.ADMIN_EMAIL
     ) {
       router.replace("/admin-panel");
       return;
@@ -76,7 +76,7 @@ export function RouteProtector({ children }: { children: ReactNode }) {
     if (
       (pathname.startsWith("/admin-panel") ||
         pathname.startsWith("/admin-panel")) &&
-      (!isAdmin || user.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL)
+      (!isAdmin || user.email !== process.env.ADMIN_EMAIL)
     ) {
       router.replace("/dashboard");
       return;
