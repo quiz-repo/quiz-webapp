@@ -2,17 +2,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Papa from "papaparse";
-import { Result } from "antd";
+
 import {
-  LogOutIcon,
-  BarChart3,
+
   FileText,
   Award,
   TrendingUp,
   FileQuestion,
   Users,
-  Target,
-  Activity,
 } from "lucide-react";
 import {
   collection,
@@ -25,6 +22,7 @@ import {
   arrayUnion,
   getDoc,
   Timestamp,
+  setDoc,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import {
@@ -59,7 +57,7 @@ interface Test {
   subject?: string;
   duration?: number;
   difficulty?: string;
-   status: "Active" | "Draft";
+  status: "Active" | "Draft";
   description?: string;
   instructions?: string[];
   questions: any[] | number;
@@ -237,7 +235,7 @@ const getTestsFromPeriod = async (
       return testDate >= startDate && testDate <= endDate;
     });
   } catch (error) {
-    console.error("Error getting tests from period:", error);
+
     return [];
   }
 };
@@ -258,6 +256,9 @@ const AdminPanel: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [downloadURL, setDownloadURL] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
+  const [pendingQuestions, setPendingQuestions] = useState<NewQuestion[]>([]); // Questions waiting to be added to a new test
+  const [isEditingTest, setIsEditingTest] = useState(false);
+  const [editingTestId, setEditingTestId] = useState<string | null>(null);
   const [pendingDeleteTestId, setPendingDeleteTestId] = useState<string | null>(
     null
   );
@@ -335,13 +336,17 @@ const AdminPanel: React.FC = () => {
     }
 
     setLoading(true);
+    setLoading(true);
     try {
-      const safeName = file.name.replace(/\s+/g, "_");
-      const fileRef = ref(storage, `csv-uploads/${safeName}`);
-      await uploadBytes(fileRef, file, { contentType: "text/csv" });
-      const url = await getDownloadURL(fileRef);
-      setDownloadURL(url);
-      toast.success("CSV uploaded!");
+      // Skip uploading to Firebase Storage to avoid CORS issues and save bandwidth.
+      // We only need the file content to parse it.
+
+      // const safeName = file.name.replace(/\s+/g, "_");
+      // const fileRef = ref(storage, `csv-uploads/${safeName}`);
+      // await uploadBytes(fileRef, file, { contentType: "text/csv" });
+      // const url = await getDownloadURL(fileRef);
+      // setDownloadURL(url);
+
       const text = await file.text();
       const parsed = Papa.parse<Row>(text, {
         header: true,
@@ -349,7 +354,7 @@ const AdminPanel: React.FC = () => {
       });
       setRows(parsed.data);
     } catch (err) {
-      console.error(err);
+
       toast.error("Failed to upload CSV.");
     } finally {
       setLoading(false);
@@ -379,11 +384,11 @@ const AdminPanel: React.FC = () => {
             const avgScore =
               testResults.length > 0
                 ? Math.round(
-                    testResults.reduce(
-                      (acc: number, r: any) => acc + (r.score || 0),
-                      0
-                    ) / testResults.length
-                  )
+                  testResults.reduce(
+                    (acc: number, r: any) => acc + (r.score || 0),
+                    0
+                  ) / testResults.length
+                )
                 : 0;
             const name =
               user.displayName || user.name || user.email || "Unknown User";
@@ -396,19 +401,19 @@ const AdminPanel: React.FC = () => {
               joinDate: user.createdAt
                 ? typeof user.createdAt.toDate === "function"
                   ? user.createdAt.toDate().toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
                   : new Date(user.createdAt).toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
                 : "Unknown",
 
               completedTests,
@@ -422,12 +427,15 @@ const AdminPanel: React.FC = () => {
                     ? new Date(r.completedAt.toDate()).toLocaleDateString()
                     : new Date(r.completedAt).toLocaleDateString()
                   : "Unknown",
-                duration: r.duration || r.timeTaken || "Unknown",
+                duration: r.timeTaken
+                  ? `${Math.floor(r.timeTaken / 60)}m ${r.timeTaken % 60}s`
+                  : "Unknown",
+
                 status: r.status || "completed",
               })),
             } as User;
           } catch (error) {
-            console.error(`Error processing user ${user.id}:`, error);
+
             return {
               id: user.id,
               name: user.name || user.displayName || "Unknown User",
@@ -445,7 +453,7 @@ const AdminPanel: React.FC = () => {
 
       setUsers(processedUsers);
     } catch (error) {
-      console.error("Error loading users:", error);
+
       toast.error("Failed to load users: " + (error as Error).message);
     } finally {
       setLoading(false);
@@ -483,7 +491,7 @@ const AdminPanel: React.FC = () => {
       toast.success("Logout successful");
       router.replace("/home");
     } catch (error) {
-      console.error("Logout error:", error);
+
       toast.error("Failed to logout");
     } finally {
       setLoading(false);
@@ -514,10 +522,7 @@ const AdminPanel: React.FC = () => {
               analyticsData[test.id] = analytics;
             }
           } catch (error) {
-            console.error(
-              `Error loading analytics for test ${test.id}:`,
-              error
-            );
+
           }
         })
       );
@@ -546,6 +551,7 @@ const AdminPanel: React.FC = () => {
         totalUsers,
         totalSubmissions
       );
+
       const activeCount =
         (currentPeriodTests?.filter((t) => t.status === "Active").length || 0) +
         (previousPeriodTests?.filter((t) => t.status === "Active").length || 0);
@@ -553,7 +559,7 @@ const AdminPanel: React.FC = () => {
       setActiveTestsCount(activeCount);
       setDashboardStats(stats);
     } catch (error) {
-      console.error("Error loading tests:", error);
+
       toast.error("Failed to load tests");
     } finally {
       setLoading(false);
@@ -585,7 +591,7 @@ const AdminPanel: React.FC = () => {
       })) as Question[];
       setQuestions(questionsData);
     } catch (error) {
-      console.error("Error loading questions:", error);
+
       toast.error("Failed to load questions");
     } finally {
       setLoading(false);
@@ -614,7 +620,7 @@ const AdminPanel: React.FC = () => {
       await loadTests();
       toast.success("Test deleted successfully!");
     } catch (error) {
-      console.error("Error deleting test:", error);
+
       toast.error("Failed to delete test");
     } finally {
       setLoading(false);
@@ -631,7 +637,7 @@ const AdminPanel: React.FC = () => {
         testId: selectedTest.id,
         question: newQuestion.question,
         options: newQuestion.options.filter((opt) => opt.trim() !== ""),
-        correctAnswer: newQuestion.correctAnswer,
+
         type: newQuestion.type,
       };
 
@@ -640,14 +646,23 @@ const AdminPanel: React.FC = () => {
         questions: arrayUnion(questionData),
       });
 
+      await setDoc(
+        doc(db, "answers", selectedTest.id),
+        {
+
+          [questionId]: newQuestion.correctAnswer
+        },
+        { merge: true }
+      );
+
       const updatedTests = tests.map((t) =>
         t.id === selectedTest.id
           ? {
-              ...t,
-              questions: Array.isArray(t.questions)
-                ? [...t.questions, questionData]
-                : [questionData],
-            }
+            ...t,
+            questions: Array.isArray(t.questions)
+              ? [...t.questions, questionData]
+              : [questionData],
+          }
           : t
       );
 
@@ -673,8 +688,76 @@ const AdminPanel: React.FC = () => {
       await loadTests();
       toast.success("Question added successfully!");
     } catch (error) {
-      console.error("Error adding question:", error);
+
       toast.error("Failed to add question");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkAddQuestions = async (newQuestions: NewQuestion[]): Promise<void> => {
+    if (!selectedTest || newQuestions.length === 0) return;
+
+    setLoading(true);
+    try {
+      const questionsData = newQuestions.map(q => ({
+        id: uuidv4(),
+        testId: selectedTest.id,
+        question: q.question,
+        options: q.options.filter((opt) => opt.trim() !== ""),
+        type: q.type,
+      }));
+
+      // Create answers map
+      const answersMap: Record<string, number> = {};
+      questionsData.forEach((q, index) => {
+        answersMap[q.id] = newQuestions[index].correctAnswer;
+      });
+
+      const testRef = doc(db, "tests", selectedTest.id);
+
+      // Update questions in test document
+      await updateDoc(testRef, {
+        questions: arrayUnion(...questionsData),
+      });
+
+      // Update answers document
+      await setDoc(
+        doc(db, "answers", selectedTest.id),
+        answersMap,
+        { merge: true }
+      );
+
+      // Update local state
+      const updatedTests = tests.map((t) =>
+        t.id === selectedTest.id
+          ? {
+            ...t,
+            questions: Array.isArray(t.questions)
+              ? [...t.questions, ...questionsData]
+              : [...questionsData],
+          }
+          : t
+      );
+
+      setTests(updatedTests);
+
+      setSelectedTest((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          questions: Array.isArray(prev.questions)
+            ? [...prev.questions, ...questionsData]
+            : [...questionsData],
+        };
+      });
+
+      setRows([]); // Clear CSV data
+      await loadTests();
+      toast.success(`${newQuestions.length} questions imported successfully!`);
+    } catch (error) {
+      console.error("Bulk add error:", error);
+      toast.error("Failed to import questions");
     } finally {
       setLoading(false);
     }
@@ -693,7 +776,7 @@ const AdminPanel: React.FC = () => {
       const testRef = doc(db, "tests", testId);
       const testSnap = await getDoc(testRef);
       if (!testSnap.exists()) {
-        console.error("Test document not found");
+
         return;
       }
 
@@ -720,7 +803,7 @@ const AdminPanel: React.FC = () => {
       await loadTests();
       toast.success("Question updated successfully!");
     } catch (error) {
-      console.error("Error updating question:", error);
+
       toast.error("Failed to update question");
     } finally {
       setLoading(false);
@@ -755,7 +838,7 @@ const AdminPanel: React.FC = () => {
       await loadTests();
       toast.success("Question deleted successfully!");
     } catch (error: any) {
-      console.error("Error deleting question:", error.message || error);
+
       toast.error("Failed to delete question");
     } finally {
       setLoading(false);
@@ -793,11 +876,25 @@ const AdminPanel: React.FC = () => {
 
     setLoading(true);
     try {
+      // Prepare questions if any
+      let questionsForCreation: any[] = [];
+
+      if (pendingQuestions.length > 0) {
+        questionsForCreation = pendingQuestions.map(q => ({
+          id: uuidv4(),
+          question: q.question,
+          options: q.options.filter(o => o.trim() !== ""),
+          correctAnswer: q.correctAnswer,
+          type: q.type,
+          difficulty: newTest.difficulty // Inherit test difficulty if not specified
+        }));
+      }
+
       const testData = {
         title: newTest.title,
         subject: newTest.subject,
         duration: parseInt(newTest.duration) || 0,
-        questions: parseInt(newTest.questions) || 0,
+        questions: questionsForCreation,
         difficulty: newTest.difficulty,
         status: newTest.status || "draft",
         description: newTest.description,
@@ -806,14 +903,101 @@ const AdminPanel: React.FC = () => {
         createdAt: Timestamp.now(),
       };
 
+      // This helper handles saving questions AND creating the secure 'answers' document
       const docId = await setDocByFirebase(testData);
+
       const newTestWithId: Test = {
         id: docId,
         ...testData,
         status: (testData.status as "Active" | "Draft") || "Draft",
+        questions: questionsForCreation // update with array, not length
       };
 
       setTests([...tests, newTestWithId]);
+      setNewTest({
+        title: "",
+        subject: "",
+        duration: "",
+        questions: "", // leave text input empty
+        difficulty: "",
+        status: "",
+        description: "",
+        instructions: [""],
+      });
+      setPendingQuestions([]); // Clear pending questions
+      setShowAddTest(false);
+      await loadTests();
+      if (questionsForCreation.length > 0) {
+        toast.success(`Test created with ${questionsForCreation.length} questions!`);
+      } else {
+        toast.success("Test created successfully!");
+      }
+    } catch (error: any) {
+      console.error("Error creating test:", error);
+      toast.error(`Failed to create test: ${error.message || error}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditTestClick = (test: Test) => {
+    setNewTest({
+      title: test.title,
+      subject: test.subject || "",
+      duration: test.duration?.toString() || "",
+      questions: "",
+      difficulty: test.difficulty || "",
+      status: test.status,
+      description: test.description || "",
+      instructions: test.instructions || [""],
+    });
+    setEditingTestId(test.id);
+    setIsEditingTest(true);
+    setShowAddTest(true);
+  };
+
+  const handleUpdateTest = async () => {
+    if (!editingTestId || !newTest.title.trim()) return;
+    setLoading(true);
+    try {
+      const testRef = doc(db, "tests", editingTestId);
+      const updates: any = {
+        title: newTest.title,
+        subject: newTest.subject,
+        duration: parseInt(newTest.duration) || 0,
+        difficulty: newTest.difficulty,
+        status: newTest.status || "Draft",
+        description: newTest.description,
+        instructions: newTest.instructions.filter((i) => i.trim() !== "")
+      };
+
+      // Handle CSV questions added during edit
+      if (pendingQuestions.length > 0) {
+        const newQuestions = pendingQuestions.map(q => ({
+          id: uuidv4(),
+          question: q.question,
+          options: q.options.filter(o => o.trim() !== ""),
+          correctAnswer: q.correctAnswer,
+          type: q.type,
+          difficulty: newTest.difficulty,
+          testId: editingTestId
+        }));
+
+        // Add to 'tests' doc
+        updates.questions = arrayUnion(...newQuestions);
+
+        // Update 'answers' doc
+        const answersMap: Record<string, number> = {};
+        newQuestions.forEach(q => answersMap[q.id] = q.correctAnswer);
+        await setDoc(doc(db, "answers", editingTestId), answersMap, { merge: true });
+      }
+
+      await updateDoc(testRef, updates);
+
+      setIsEditingTest(false);
+      setEditingTestId(null);
+      setShowAddTest(false);
+      setPendingQuestions([]);
       setNewTest({
         title: "",
         subject: "",
@@ -824,12 +1008,12 @@ const AdminPanel: React.FC = () => {
         description: "",
         instructions: [""],
       });
-      setShowAddTest(false);
       await loadTests();
-      toast.success("Test created successfully!");
-    } catch (error) {
-      console.error("Error adding test:", error);
-      toast.error("Failed to create test");
+      toast.success("Test updated successfully");
+
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Failed to update test: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -876,10 +1060,10 @@ const AdminPanel: React.FC = () => {
   ];
 
   return (
-    <div className="h-[100%] bg-slate-50 overflow-hidden">
+    <div className="h-full bg-slate-50 overflow-hidden">
       {loading && <Loader />}
 
-      <div className="flex h-[100%]">
+      <div className="flex h-full">
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -965,6 +1149,14 @@ const AdminPanel: React.FC = () => {
                 setIsNavigationModalVisible={setIsNavigationModalVisible}
                 users={users}
                 handleFileUpload={handleFileUpload}
+                csvData={rows}
+                setCsvData={setRows}
+                handleBulkAddQuestions={handleBulkAddQuestions}
+                pendingQuestions={pendingQuestions}
+                setPendingQuestions={setPendingQuestions}
+                handleUpdateTest={handleUpdateTest}
+                handleEditTestClick={handleEditTestClick}
+                isEditingTest={isEditingTest}
               />
             )}
 

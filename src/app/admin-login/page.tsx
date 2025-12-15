@@ -5,8 +5,9 @@ import React, { useState } from "react";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Shield, Lock, Mail } from "lucide-react";
-import { auth } from "@/lib/Firebase";
+import { auth, getAdmins } from "@/lib/Firebase";
 import { toast } from "react-toastify";
+import bcrypt from "bcryptjs";
 
 
 const AdminLogin = () => {
@@ -18,32 +19,6 @@ const AdminLogin = () => {
 
   const router = useRouter();
 
-  // const handleLogin = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-  //   setError("");
-
-  //   try {
-  //     if (email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL || password !== process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-  //       throw new Error("Invalid admin credentials");
-  //     }
-  //     const userCredential = await signInWithEmailAndPassword(
-  //       auth,
-  //       email,
-  //       password
-  //     );
-
-  //     toast.success("Admin login successful!");
-  //     router.push("/admin-panel");
-  //   } catch (err: any) {
-  //     const message = err.message || "Login failed. Please try again.";
-  //     setError(message);
-  //     toast.error(message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -53,9 +28,24 @@ const AdminLogin = () => {
       await signOut(auth);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
+      // Check if user exists in 'admin' collection
+      // const admins = await getAdmins();
+      // console.log(admins);
+      // const findEmail = admins.filter((admin: any) => admin.email === email);
+      // if (findEmail.length === 0) {
+      //   throw new Error("You are not authorized as admin (Email not found in admin list).");
+      // }
+
+
+      // const admin = findEmail[0];
+      // const matchPAss = await bcrypt.compare(password, admin.password);
+      // if (!matchPAss) {
+      //   throw new Error("Invalid password");
+      // }
+      // delete admin.password;
+
       await userCredential.user.reload();
       const token = await userCredential.user.getIdToken();
-
 
       const res = await fetch("/api/check-admin", {
         method: "POST",
@@ -65,7 +55,7 @@ const AdminLogin = () => {
 
       const data = await res.json();
       if (!data.isAdmin) {
-        throw new Error("You are not authorized as admin.");
+        throw new Error("You are not authorized as admin (Insufficient permissions).");
       }
 
       toast.success("Admin login successful!");

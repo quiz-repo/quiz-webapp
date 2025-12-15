@@ -38,12 +38,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         if (currentUser) {
           setUser(currentUser);
-
+          console.log(currentUser, ":yfuyfffffy");
+          // const newObj = {
+          //   user_id: currentUser.uid,
+          // };
           const token = await currentUser.getIdToken();
           Cookies.set("token", token, { expires: 1 });
           localStorage.setItem("token", token);
-          const isAdmin = currentUser.email === process.env.ADMIN_EMAIL;
-          localStorage.setItem("isAdmin", isAdmin.toString());
+
+          try {
+            const res = await fetch("/api/check-admin", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              // We need to pass the ID token so the server can verify it
+              body: JSON.stringify({ token }),
+            });
+            const data = await res.json();
+            const isAdmin = data.isAdmin === true;
+            localStorage.setItem("isAdmin", isAdmin.toString());
+          } catch (error) {
+            console.error("Failed to verify admin status:", error);
+            // Default to false if check fails, but don't overwrite if it was already true? 
+            // Better to be safe:
+            localStorage.setItem("isAdmin", "false");
+          }
         } else {
           setUser(null);
           Cookies.remove("token");

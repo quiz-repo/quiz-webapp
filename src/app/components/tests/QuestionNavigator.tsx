@@ -32,7 +32,7 @@ export const QuestionNavigator = ({
       {/* Header Section */}
       <div className="flex flex-col gap-5 mb-6">
         <div className="flex items-center justify-between">
-          <h4 className="font-bold text-xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+          <h4 className="font-bold text-xl bg-linear-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
             Question Navigator
           </h4>
           <div className="px-3 py-1 bg-blue-500/20 rounded-full border border-blue-400/30">
@@ -45,7 +45,7 @@ export const QuestionNavigator = ({
         {/* Progress Bar */}
         <div className="relative w-full h-2 bg-white/10 rounded-full overflow-hidden">
           <div
-            className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500 ease-out rounded-full"
+            className="absolute top-0 left-0 h-full bg-linear-to-r from-green-400 to-emerald-500 transition-all duration-500 ease-out rounded-full"
             style={{ width: `${progress}%` }}
           >
             <div className="absolute top-0 right-0 w-8 h-full bg-white/30 blur-sm"></div>
@@ -56,7 +56,7 @@ export const QuestionNavigator = ({
         <div className="grid grid-cols-3 gap-3 text-xs">
           <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
             <div className="relative">
-              <div className="w-3 h-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full shadow-lg shadow-blue-500/50"></div>
+              <div className="w-3 h-3 bg-linear-to-br from-blue-400 to-blue-600 rounded-full shadow-lg shadow-blue-500/50"></div>
               <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></div>
             </div>
             <span className="text-blue-200 text-[14px]">Current</span>
@@ -64,7 +64,7 @@ export const QuestionNavigator = ({
 
           <div className="flex items-center gap-2 bg-white/5 rounded-lg p-2 border border-white/10">
             <div className="relative">
-              <div className="w-3 h-3 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full shadow-lg shadow-green-500/50"></div>
+              <div className="w-3 h-3 bg-linear-to-br from-green-400 to-emerald-600 rounded-full shadow-lg shadow-green-500/50"></div>
               <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-white rounded-full"></div>
             </div>
             <span className="text-green-200  text-[14px]">Done</span>
@@ -92,12 +92,12 @@ export const QuestionNavigator = ({
           hover:scale-105 active:scale-95
           ${
             isCurrent
-              ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white border-blue-400 shadow-xl"
+              ? "bg-linear-to-br from-blue-500 to-blue-600 text-white border-blue-400 shadow-xl"
               : ""
           }
           ${
             hasAnswer && !isCurrent
-              ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white border-green-400 shadow-lg"
+              ? "bg-linear-to-br from-green-500 to-emerald-600 text-white border-green-400 shadow-lg"
               : ""
           }
           ${

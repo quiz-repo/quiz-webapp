@@ -17,10 +17,10 @@ export const ResultsView = ({
 
   const totalQuestions = result.totalQuestions || test.questions.length;
   const percentage = Math.round((result.score / totalQuestions) * 100);
-console.log(result,"ujjjnu")
+
   let performance = "";
   let performanceColor = "";
-  console.log(result);
+
 
   if (percentage >= 80) {
     performance = "Excellent!";

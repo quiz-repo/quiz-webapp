@@ -29,11 +29,12 @@ export interface TestResult {
   testId: string;
   userId: string;
   score: number;
-  timeTaken: string;
+  timeTaken: number;
   dateCompleted: string;
   userAnswers: UserAnswer[];
   totalQuestions: number;
   percentage: number;
+  formattedTime?: string;
 }
 export interface ResultsManagementProps {
   users: User[];

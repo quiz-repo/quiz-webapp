@@ -19,7 +19,7 @@ export const DashboardView = ({
   onShowResults,
 }: DashboardViewProps) => {
   const [totalUsers, setTotalUsers] = useState<number>(0);
-  console.log(totalUsers, "totalUsers");
+
   useEffect(() => {
     const fetchUsers = async () => {
       const count = await getTotalUsers();
@@ -31,7 +31,7 @@ export const DashboardView = ({
 
   return (
     <div className=" select-none w-full overflow-x-hidden">
-      {/* Stats cards */}
+     
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
         <StatsCard
           title="Active Tests"
@@ -61,7 +61,7 @@ export const DashboardView = ({
         /> */}
       </div>
 
-      {/* Available Tests */}
+
       <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 sm:p-6 md:p-8 border border-white/20 w-full">
         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4 sm:mb-6">
           Available Tests

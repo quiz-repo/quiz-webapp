@@ -38,67 +38,67 @@ export default function LoginPage() {
       [name]: value,
     }));
   };
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  if (!formData.email || !formData.password) {
-    toast.error("Please fill in all fields");
-    return;
-  }
-
-  setIsUserLoading(true);
-
-  try {
-    // Firebase login
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      formData.email,
-      formData.password
-    );
-    
-    const user = userCredential.user;
-
- 
-    const tokenResult = await user.getIdTokenResult();
-    const isAdmin = tokenResult.claims.admin === true;
-
-   
-    if (isAdmin) {
-      toast.error("Admin accounts cannot log in from the user login page");
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields");
       return;
     }
 
-    // Store token in cookies
-    const expires = rememberMe ? 7 : 1; // days
-    Cookies.set("token", tokenResult.token, {
-      expires,
-      path: "/",
-      secure: process.env.NODE_ENV === "production",
-    });
+    setIsUserLoading(true);
 
-    toast.success("User login successful");
-    router.push("/dashboard");
+    try {
+      // Firebase login
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
 
-  } catch (error: any) {
-    console.error("Login Error:", error);
+      const user = userCredential.user;
 
-    let errorMessage = "Login failed";
 
-    if (error.code === "auth/user-not-found") {
-      errorMessage = "No account found with this email";
-    } else if (error.code === "auth/wrong-password") {
-      errorMessage = "Incorrect password";
-    } else if (error.code === "auth/invalid-email") {
-      errorMessage = "Invalid email address";
-    } else if (error.code === "auth/too-many-requests") {
-      errorMessage = "Too many failed attempts. Please try again later";
+      const tokenResult = await user.getIdTokenResult();
+      const isAdmin = tokenResult.claims.admin == true;
+
+
+      if (isAdmin) {
+        toast.error("Admin accounts cannot log in from the user login page");
+        return;
+      }
+      // ankush aryan
+      // Store token in cookies
+      const expires = rememberMe ? 7 : 1; // days
+      Cookies.set("token", tokenResult.token, {
+        expires,
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      });
+
+      toast.success("User login successful");
+      router.push("/dashboard");
+
+    } catch (error: any) {
+      console.error("Login Error:", error);
+
+      let errorMessage = "Login failed";
+
+      if (error.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email";
+      } else if (error.code === "auth/wrong-password") {
+        errorMessage = "Incorrect password";
+      } else if (error.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address";
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Too many failed attempts. Please try again later";
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsUserLoading(false);
     }
-
-    toast.error(errorMessage);
-  } finally {
-    setIsUserLoading(false);
-  }
-};
+  };
 
   const handleForgotPassword = () => {
     router.push("/forgot-password");
@@ -179,9 +179,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-    
+
         <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20 transform transition-all duration-300 hover:scale-105">
-        
+
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-r from-purple-500 to-cyan-500 rounded-2xl mb-4 transform transition-transform duration-300 hover:rotate-12">
               <Lock className="w-8 h-8 text-white" />
@@ -192,20 +192,18 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 
           <form onSubmit={handleSubmit} className="space-y-6">
-    
+
             <div className="relative group">
               <div
-                className={`absolute inset-0 bg-linear-to-r from-purple-500/20 to-cyan-500/20 rounded-xl blur transition-all duration-300 ${
-                  focusedField === "email" ? "opacity-100" : "opacity-0"
-                }`}
+                className={`absolute inset-0 bg-linear-to-r from-purple-500/20 to-cyan-500/20 rounded-xl blur transition-all duration-300 ${focusedField === "email" ? "opacity-100" : "opacity-0"
+                  }`}
               ></div>
               <div className="relative">
                 <Mail
-                  className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
-                    focusedField === "email"
-                      ? "text-purple-400"
-                      : "text-gray-400"
-                  }`}
+                  className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${focusedField === "email"
+                    ? "text-purple-400"
+                    : "text-gray-400"
+                    }`}
                 />
                 <input
                   type="email"
@@ -224,17 +222,15 @@ const handleSubmit = async (e: React.FormEvent) => {
             {/* Password Field */}
             <div className="relative group">
               <div
-                className={`absolute inset-0 bg-linear-to-r from-purple-500/20 to-cyan-500/20 rounded-xl blur transition-all duration-300 ${
-                  focusedField === "password" ? "opacity-100" : "opacity-0"
-                }`}
+                className={`absolute inset-0 bg-linear-to-r from-purple-500/20 to-cyan-500/20 rounded-xl blur transition-all duration-300 ${focusedField === "password" ? "opacity-100" : "opacity-0"
+                  }`}
               ></div>
               <div className="relative">
                 <Lock
-                  className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${
-                    focusedField === "password"
-                      ? "text-purple-400"
-                      : "text-gray-400"
-                  }`}
+                  className={`absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${focusedField === "password"
+                    ? "text-purple-400"
+                    : "text-gray-400"
+                    }`}
                 />
                 <input
                   type={showPassword ? "text" : "password"}
@@ -270,11 +266,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                 />
                 <div className="relative">
                   <div
-                    className={`w-4 h-4 border rounded transition-all duration-300 ${
-                      rememberMe
-                        ? "bg-linear-to-r from-purple-500 to-cyan-500 border-purple-400"
-                        : "bg-white/10 border-white/20 group-hover:border-purple-400"
-                    }`}
+                    className={`w-4 h-4 border rounded transition-all duration-300 ${rememberMe
+                      ? "bg-linear-to-r from-purple-500 to-cyan-500 border-purple-400"
+                      : "bg-white/10 border-white/20 group-hover:border-purple-400"
+                      }`}
                   >
                     {rememberMe && (
                       <svg

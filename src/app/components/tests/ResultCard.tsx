@@ -14,12 +14,13 @@ export const ResultsView = ({
   onEndTest,
   onLogout,
 }: ResultsViewProps) => {
+  console.log(result, "ytytftfyuf")
   const totalQuestions = result.totalQuestions || test.questions.length;
   const percentage = Math.round((result.score / totalQuestions) * 100);
 
   let performance = "";
   let performanceColor = "";
-  console.log(result);
+
 
   if (percentage >= 80) {
     performance = "Excellent!";
@@ -42,7 +43,7 @@ export const ResultsView = ({
         <p className="text-blue-200">Completed on {result.dateCompleted}</p>
       </div>
 
-      <div className="bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-xl p-6 mb-8 border border-white/20">
+      <div className="bg-gradient to-r from-blue-600/30 to-purple-600/30 rounded-xl p-6 mb-8 border border-white/20">
         <div className="flex flex-col items-center">
           <div className="relative w-40 h-40 mb-6">
             <svg className="w-full h-full" viewBox="0 0 100 100">

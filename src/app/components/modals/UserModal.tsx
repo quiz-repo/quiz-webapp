@@ -17,7 +17,7 @@ const UserModal: React.FC = () => {
   useEffect(() => {
     const currentUser = auth.currentUser;
     if (currentUser) {
-      console.log("Photo URL:", currentUser.photoURL);
+    
       setUser({
         name: currentUser.displayName || "User",
         email: currentUser.email || "No Email",
@@ -59,7 +59,7 @@ const UserModal: React.FC = () => {
         className="custom-ant-modal"
       >
         {user && (
-          <div className="text-center py-4 bg-gradient-to-br from-purple-600 via-purple-700 to-purple-900 rounded-2xl text-white">
+          <div className="text-center py-4 bg-linear-to-br from-purple-600 via-purple-700 to-purple-900 rounded-2xl text-white">
             {/* Email */}
             <div className="text-white/80 text-sm mb-4">{user.email}</div>
 
