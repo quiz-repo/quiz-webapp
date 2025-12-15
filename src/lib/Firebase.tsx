@@ -5,6 +5,7 @@ import {
   collection,
   getDocs,
   addDoc,
+  setDoc,
   doc,
   getDoc,
   query,
@@ -13,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { TestResult } from "./FirebaseDataService";
 import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,7 +23,6 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
- 
 };
 
 const app = initializeApp(firebaseConfig);
@@ -29,15 +30,18 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 export const storage = getStorage(app);
 
+// export const functions = getFunctions(app, "asia-south1");
+
+// -----------------------------------
+// AUTH HELPERS
+// -----------------------------------
+
 const ensureAuthenticated = (): Promise<boolean> => {
   return new Promise((resolve) => {
-    if (auth.currentUser) {
-      resolve(true);
-      return;
-    }
-    
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
+    if (auth.currentUser) return resolve(true);
+
+    const unsub = onAuthStateChanged(auth, (user) => {
+      unsub();
       resolve(!!user);
     });
   });
@@ -45,18 +49,13 @@ const ensureAuthenticated = (): Promise<boolean> => {
 
 const isAdmin = async (): Promise<boolean> => {
   return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      unsubscribe();
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      unsub();
 
-      if (!user) {
-        resolve(false);
-        return;
-      }
+      if (!user) return resolve(false);
 
-      // Get Firebase token
       const token = await user.getIdToken();
 
-      // Ask the server to verify
       const res = await fetch("/api/check-admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,332 +68,220 @@ const isAdmin = async (): Promise<boolean> => {
   });
 };
 
-
+// -----------------------------------
+// FETCH TEST LIST
+// -----------------------------------
 
 async function getData() {
-  try {
-    console.log("getData: Starting to fetch tests data");
-    
-    const user = auth.currentUser;
-    console.log("getData: Current user:", user?.uid);
-    
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
+  const user = auth.currentUser;
+  if (!user) throw new Error("User not authenticated");
 
-    console.log("getData: Attempting to fetch from tests collection");
-    const querySnapshot = await getDocs(collection(db, "tests"));
-    
-    console.log("getData: Successfully fetched", querySnapshot.docs.length, "documents");
-    
-    const data = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    
-    console.log("getData: Processed data:", data);
-    return data;
-  } catch (error) {
-    console.error("Error getting documents:", error);
-    throw error;
-  }
+  const snap = await getDocs(collection(db, "tests"));
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 }
+
+// -----------------------------------
+// FETCH QUESTIONS COLLECTION
+// -----------------------------------
 
 async function getQuestions() {
-  try {
-    console.log("getQuestions: Starting to fetch questions data");
-    
-    const user = auth.currentUser;
-    console.log("getQuestions: Current user:", user?.uid);
-    
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
+  const user = auth.currentUser;
+  if (!user) throw new Error("User not authenticated");
 
-    console.log("getQuestions: Attempting to fetch from questions collection");
-    const querySnapshot = await getDocs(collection(db, "questions"));
-    
-    console.log("getQuestions: Successfully fetched", querySnapshot.docs.length, "documents");
-    
-    const data = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    
-    console.log("getQuestions: Processed data:", data);
-    return data;
-  } catch (error) {
-    console.error("Error getting questions:", error);
-    throw error;
-  }
+  const snap = await getDocs(collection(db, "questions"));
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 }
+
+// -----------------------------------
+// ADD TEST DOCUMENT (SECURE)
+// -----------------------------------
 
 async function addTestDocument(data: any): Promise<string> {
-  try {
-    const isAuthenticated = await ensureAuthenticated();
-    if (!isAuthenticated) {
-      throw new Error("User must be authenticated to add test document");
-    }
+  const isAuthenticated = await ensureAuthenticated();
+  if (!isAuthenticated) throw new Error("User must be authenticated");
 
-    const adminStatus = await isAdmin();
-    if (!adminStatus) {
-      throw new Error("User must be admin to add test document");
-    }
+  const adminStatus = await isAdmin();
+  if (!adminStatus) throw new Error("User must be admin");
 
-    const docRef = await addDoc(collection(db, "tests"), {
-      title: data.title,
-      subject: data.subject,
-      duration: data.duration,
-      questions: data.questions,
-      difficulty: data.difficulty,
-      status: data.status,
-      description: data.description,
-      instructions: data.instructions,
-      created: data.created,
-      createdAt: data.createdAt,
-    });
+  // ------------------------------
+  // 1️⃣ Extract correct answers
+  // ------------------------------
+  const answerKey: Record<string, number> = {};
+  const questionsForStudent = data.questions.map((q: any) => {
+    answerKey[q.id] = q.correctAnswer;
 
-    console.log("Document written with ID:", docRef.id);
-    return docRef.id;
-  } catch (error) {
-    console.error("Error adding test document:", error);
-    throw error;
-  }
+    return {
+      id: q.id,
+      question: q.question,
+      options: q.options,
+      correctAnswer: q.correctAnswer, // Keep this for Admin Panel visibility
+      difficulty: q.difficulty,
+      type: q.type
+    };
+  });
+
+  // ------------------------------
+  // 2️⃣ Save test WITHOUT answers
+  // ------------------------------
+  const docRef = await addDoc(collection(db, "tests"), {
+    title: data.title,
+    subject: data.subject,
+    duration: data.duration,
+    questions: questionsForStudent,
+    description: data.description,
+    instructions: data.instructions,
+    created: data.created,
+    createdAt: data.createdAt,
+    status: data.status,
+    difficulty: data.difficulty,
+  });
+
+  console.log("Test saved with ID:", docRef.id);
+
+  await setDoc(doc(db, "answers", docRef.id), answerKey);
+
+
+  console.log("Answer key stored securely");
+
+  return docRef.id;
 }
+
+// export const result = collection(db, "answers");
+export const getResults = async () => {
+  const snapshot = await getDocs(collection(db, "answers"));
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+};
+
+export const getAdmins = async () => {
+  const snapshot = await getDocs(collection(db, "admin"));
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
+};
 async function getAllUsers(): Promise<any[]> {
-  try {
-    const isAuthenticated = await ensureAuthenticated();
-    if (!isAuthenticated) {
-      throw new Error("User must be authenticated");
-    }
+  const isAuthenticated = await ensureAuthenticated();
+  if (!isAuthenticated) throw new Error("User must be authenticated");
 
- 
-
-    console.log("getAllUsers: Fetching all users");
-    const querySnapshot = await getDocs(collection(db, "users"));
-    
-    const users = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    
-    console.log("getAllUsers: Successfully fetched", users.length, "users");
-    return users;
-  } catch (error) {
-    console.error("Error getting all users:", error);
-    throw error;
-  }
+  const snap = await getDocs(collection(db, "users"));
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 }
+
 async function getUserTestResultsById(userId: string): Promise<TestResult[]> {
-  try {
-    const isAuthenticated = await ensureAuthenticated();
-    if (!isAuthenticated) {
-      throw new Error("User must be authenticated");
-    }
+  const isAuthenticated = await ensureAuthenticated();
+  if (!isAuthenticated) throw new Error("User must be authenticated");
 
-    console.log("getUserTestResultsById", userId);
-    const q = query(
-      collection(db, "testResults"),
-      where("userId", "==", userId),
-      orderBy("completedAt", "desc")
-    );
-    
-    const querySnapshot = await getDocs(q);
-    
-    const results = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as TestResult[];
-    
-    console.log("getUserTestResultsById: Successfully fetched", results.length, "results");
-    return results;
-  } catch (error) {
-    console.error("Error getting user test results by ID:", error);
-    return [];
-  }
+  const q = query(
+    collection(db, "testResults"),
+    where("userId", "==", userId),
+    orderBy("completedAt", "desc")
+  );
+
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as TestResult[];
 }
+
 async function getAllTestResults(): Promise<TestResult[]> {
-  try {
-    const isAuthenticated = await ensureAuthenticated();
-    if (!isAuthenticated) {
-      throw new Error("User must be authenticated");
-    }
+  const isAuthenticated = await ensureAuthenticated();
+  if (!isAuthenticated) throw new Error("User must be authenticated");
 
-    const adminStatus = await isAdmin();
-    if (!adminStatus) {
-      throw new Error("Access denied: Admin privileges required");
-    }
+  const adminStatus = await isAdmin();
+  if (!adminStatus) throw new Error("Admin privileges required");
 
-    console.log("getAllTestResults");
-    const querySnapshot = await getDocs(collection(db, "testResults"));
-    
-    const results = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as TestResult[];
-    
-    console.log("fetched", results.length, "results");
-    return results;
-  } catch (error) {
-    console.error("Error getting all test results:", error);
-    return [];
-  }
+  const snap = await getDocs(collection(db, "testResults"));
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as TestResult[];
 }
-
-
 
 async function getTotalUsers(): Promise<number> {
-  try {
-    const authenticated = await ensureAuthenticated();
-    if (!authenticated) {
-      console.warn("getTotalUsers: User not authenticated");
-      return 0;
-    }
+  const isAuthenticated = await ensureAuthenticated();
+  if (!isAuthenticated) return 0;
 
-    const admin = await isAdmin();
-    if (!admin) {
-      console.warn("getTotalUsers: Access denied - admin required");
-      return 0;
-    }
+  const isAdminUser = await isAdmin();
+  if (!isAdminUser) return 0;
 
-    const querySnapshot = await getDocs(collection(db, "users"));
-    return querySnapshot.size;
-  } catch (error) {
-    console.error("getTotalUsers: Error fetching users", error);
-    return 0;
-  }
+  const snap = await getDocs(collection(db, "users"));
+  return snap.size;
 }
 
 const fetchTestResult = async (resultId: string): Promise<TestResult> => {
-  try {
-    const isAuthenticated = await ensureAuthenticated();
-    if (!isAuthenticated) {
-      throw new Error("User must be authenticated to fetch test results");
-    }
+  const isAuthenticated = await ensureAuthenticated();
+  if (!isAuthenticated) throw new Error("User must be authenticated");
 
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("No authenticated user found");
-    }
+  const user = auth.currentUser;
+  if (!user) throw new Error("No authenticated user found");
 
-    const docRef = doc(db, "testResults", resultId);
-    const docSnap = await getDoc(docRef);
+  const docRef = doc(db, "testResults", resultId);
+  const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      
+  if (!docSnap.exists()) throw new Error("Test result not found");
 
-      const adminStatus = await isAdmin();
-      if (!adminStatus && data.userId !== user.uid) {
-        throw new Error("Unauthorized to access this test result");
-      }
+  const data = docSnap.data();
 
-      return {
-        id: docSnap.id,
-        ...data,
-      } as TestResult;
-    } else {
-      throw new Error("Test result not found");
-    }
-  } catch (error) {
-    console.error("Error fetching test result:", error);
-    throw error;
-  }
+  const adminStatus = await isAdmin();
+  if (!adminStatus && data.userId !== user.uid)
+    throw new Error("Unauthorized access");
+
+  return { id: docSnap.id, ...data } as TestResult;
 };
-const addTestResult = async (result: Omit<TestResult, 'id'>): Promise<string> => {
-  try {
-    const isAuthenticated = await ensureAuthenticated();
-    if (!isAuthenticated) {
-      throw new Error("User must be authenticated to save test results");
-    }
 
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("No authenticated user found");
-    }
+const addTestResult = async (result: Omit<TestResult, "id">): Promise<string> => {
+  const isAuthenticated = await ensureAuthenticated();
+  if (!isAuthenticated) throw new Error("User must be authenticated");
 
-    // Ensure the result belongs to the current user
-    const resultWithUserId = {
-      ...result,
-      userId: user.uid,
-    };
+  const user = auth.currentUser;
+  if (!user) throw new Error("User missing");
 
-    const docRef = await addDoc(collection(db, "testResults"), resultWithUserId);
-    console.log("Test result saved with ID:", docRef.id);
-    return docRef.id;
-  } catch (error) {
-    console.error("Error saving test result:", error);
-    throw error;
-  }
+  const resultWithUserId = { ...result, userId: user.uid };
+
+  const docRef = await addDoc(collection(db, "testResults"), resultWithUserId);
+  return docRef.id;
 };
+
 const getUserTestResults = async (): Promise<TestResult[]> => {
-  try {
-    console.log("getUserTestResults: Starting to fetch test results");
-    
-    const user = auth.currentUser;
-    console.log("getUserTestResults: Current user:", user?.uid);
-    
-    if (!user) {
-      console.log("getUserTestResults: No authenticated user, returning empty array");
-      return [];
-    }
+  const user = auth.currentUser;
+  if (!user) return [];
 
-    console.log("getUserTestResults: Attempting to fetch user's test results");
-    const q = query(
-      collection(db, "testResults"),
-      where("userId", "==", user.uid)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    console.log("getUserTestResults: Successfully fetched", querySnapshot.docs.length, "results");
-    
-    const results = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as TestResult[];
-    
-    console.log("getUserTestResults: Processed results:", results);
-    return results;
-  } catch (error) {
-    console.error("Error getting user test results:", error);
-    return [];
-  }
+  const q = query(
+    collection(db, "testResults"),
+    where("userId", "==", user.uid)
+  );
+
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as TestResult[];
 };
-const getTestAnalytics = async (testId: string) => {
-  try {
-    const adminStatus = await isAdmin();
-  
-    
 
-    const q = query(
-      collection(db, "testResults"),
-      where("testId", "==", testId)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    const results = querySnapshot.docs.map(doc => doc.data());
-    
-    return {
-      totalAttempts: results.length,
-      averageScore: results.length > 0 ? 
-        results.reduce((acc, result) => acc + (result.score || 0), 0) / results.length : 0,
-      highestScore: results.length > 0 ? 
-        Math.max(...results.map(r => r.score || 0)) : 0,
-      lowestScore: results.length > 0 ? 
-        Math.min(...results.map(r => r.score || 0)) : 0,
-      passRate: results.length > 0 ? 
-        (results.filter(r => (r.score || 0) >= 60).length / results.length) * 100 : 0,
-    };
-  } catch (error) {
-    console.error("Error getting test analytics:", error);
-    throw error;
-  }
+const getTestAnalytics = async (testId: string) => {
+  const adminStatus = await isAdmin();
+  if (!adminStatus) throw new Error("Admin required");
+
+  const q = query(collection(db, "testResults"), where("testId", "==", testId));
+  const snap = await getDocs(q);
+  const results = snap.docs.map((doc) => doc.data());
+
+  return {
+    totalAttempts: results.length,
+    averageScore:
+      results.length > 0
+        ? results.reduce((a, r) => a + (r.score || 0), 0) / results.length
+        : 0,
+    highestScore: results.length > 0 ? Math.max(...results.map((r) => r.score || 0)) : 0,
+    lowestScore: results.length > 0 ? Math.min(...results.map((r) => r.score || 0)) : 0,
+    passRate:
+      results.length > 0
+        ? (results.filter((r) => (r.score || 0) >= 60).length / results.length) * 100
+        : 0,
+  };
 };
 
 export {
   auth,
   db,
-  signOut, 
+  signOut,
   getData as getDocByFirebase,
   addTestDocument as setDocByFirebase,
   getQuestions,
@@ -408,5 +295,4 @@ export {
   getTestAnalytics,
   ensureAuthenticated,
   isAdmin,
-  // createAdmin,
 };

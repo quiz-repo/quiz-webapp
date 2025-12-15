@@ -9,7 +9,7 @@ interface InstructionsViewProps {
 
 
 export const InstructionsView = ({ test, onStartTest  }: InstructionsViewProps) => (
-  console.log("dataa", test),
+
   <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 sm:p-4 border border-white/20 max-h-screen overflow-hidden">
 
  

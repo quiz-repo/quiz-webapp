@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Question, Test, TestResult } from "../components/tests/type";
+import { Test, TestResult } from "../components/tests/type";
 import { ArrowLeft, LogOutIcon } from "lucide-react";
 import { DashboardView } from "../components/tests/DashboardView";
 import { InstructionsView } from "../components/tests/InstructionsView";
-import { TestView } from "../components/tests/TestView";
+
 import { ResultsView } from "../components/tests/ResultsView";
 import ConfirmModal from "../components/modals/ConfirmModal";
 import {
@@ -13,10 +13,15 @@ import {
   signOut,
   addTestResult,
   getUserTestResults,
+  db,
+  getResults,
 } from "@/lib/Firebase";
 import { auth } from "@/lib/Firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import UserModal from "../components/modals/UserModal";
+import { toast } from "sonner";
+import { doc, getDoc } from "firebase/firestore";
+import { TestView } from "../components/tests/TestView";
 
 type ViewType = "dashboard" | "instructions" | "test" | "results";
 type UserAnswer = string | number | { answer: string | number } | null | undefined;
@@ -42,7 +47,8 @@ export default function TestDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const router = useRouter();
-const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
+  const [timerReady, setTimerReady] = useState(false);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -60,27 +66,49 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
     return () => unsubscribe();
   }, [router]);
 
-  useEffect(() => {
-    let timer: NodeJS.Timeout | undefined;
-    if (testStarted && timeRemaining > 0) {
-      timer = setInterval(() => {
-        setTimeRemaining((prev) => {
-          if (prev <= 1) {
-            handleSubmitTest();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timer) {
-        clearInterval(timer);
-      }
-    };
-  }, [testStarted, timeRemaining]);
+  // useEffect(() => {
+  //   let timer: NodeJS.Timeout | undefined;
+  //   if (testStarted && timeRemaining > 0) {
+  //     timer = setInterval(() => {
+  //       setTimeRemaining((prev) => {
+  //         if (prev <= 1) {
+  //           handleSubmitTest();
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+  //   }
+  //   return () => {
+  //     if (timer) {
+  //       clearInterval(timer);
+  //     }
+  //   };
+  // }, [testStarted, timeRemaining]);
 
   // Load data when authenticated
+
+  useEffect(() => {
+    console.log("Timer ticktimeRemaining =", timeRemaining);
+
+    // only start timer when both flags are true
+    if (!testStarted || !timerReady) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleSubmitTest();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [testStarted, timerReady]);
+
+
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
       loadData();
@@ -89,7 +117,7 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
 
   const loadData = async () => {
     try {
-      console.log("📚 Starting data load process");
+
       setError(null);
 
       const [testsResult, resultsResult] = await Promise.allSettled([
@@ -98,15 +126,15 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
       ]);
 
       if (testsResult.status === "rejected") {
-     
+
         setError("Failed to load tests. Please refresh the page.");
       }
 
       if (resultsResult.status === "rejected") {
-        console.error("  Failed to fetch results:", resultsResult.reason);
+
       }
 
-  
+
     } catch (error) {
 
       setError("An unexpected error occurred. Please refresh the page.");
@@ -115,7 +143,7 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
 
   const fetchTests = async (): Promise<void> => {
     try {
-      console.log("🔍 Fetching tests from Firestore...");
+
       const testData = await getDocByFirebase();
       console.log(testData, 'sdfsdf');
 
@@ -135,10 +163,9 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
   };
 
   const fetchUserTestResults = async (): Promise<void> => {
+
     try {
-      console.log("📊 Fetching user test results...");
       const results = await getUserTestResults();
-      console.log(`✅ Received ${results.length} test results`);
       const mappedResults = results.map((result: any) => ({
         ...result,
         userAnswers: result.userAnswers ?? [],
@@ -150,121 +177,136 @@ const [activeTestsCount, setActiveTestsCount] = useState<number>(0);
             : 0),
       }));
       setTestResults(mappedResults);
-   
+
     } catch (error) {
       console.error("Failed to fetch test results:", error);
     }
   };
-const handleSubmitTest = async (): Promise<void> => {
-  setIsSubmitted(true);
-  // Ensure we have a test to submit
-  if (!selectedTest || !selectedTest.questions || selectedTest.questions.length === 0) {
-    console.warn("Attempted to submit test without a valid selectedTest or questions.");
-    return;
-  }
+  const sanitizeForFirestore = (value: any): any => {
 
-  try {
-    console.log(" Building userAnswers and calculating score...");
-
-    const questionsLength = selectedTest.questions.length;
-    let score = 0;
-
-    // --- 1. Clean and Prepare userAnswers & Calculate Score Simultaneously ---
-    const userAnswers = selectedTest.questions.map((q) => {
-      // const rawUserAnswer = answers[q?.id];
-
-      // Standardize the answer value: check if it's an object with an 'answer' property, otherwise use the value directly.
-     const rawUserAnswer: UserAnswer =  answers[q?.id];
-
-const userAnswerValue =
-  (typeof rawUserAnswer === "object" && rawUserAnswer !== null && 'answer' in rawUserAnswer)
-    ? (rawUserAnswer as { answer: string | number }).answer // type assertion here
-    : rawUserAnswer; // Use the raw value (which should be the index/option)
-
-      // Convert to string for consistent comparison, ignore null/undefined attempts
-      const attemptValue = userAnswerValue !== undefined && userAnswerValue !== null ? String(userAnswerValue) : undefined;
-      
-      const isCorrect =
-        attemptValue !== undefined &&
-        String(attemptValue) === String(q.correctAnswer);
-
-      if (isCorrect) {
-        score++;
+    if (value === undefined) return null;
+    if (value === null) return null;
+    if (Array.isArray(value)) return value.map(sanitizeForFirestore);
+    if (typeof value === "object") {
+      const out: Record<string, any> = {};
+      for (const [k, v] of Object.entries(value)) {
+        out[k] = sanitizeForFirestore(v);
       }
-      
-      // Ensure 'attempt' is explicitly set to null/0/-1 or excluded if not answered, 
-      // but if included, must not be 'undefined' for Firestore.
-      // We'll use 'null' for the attempt if it was skipped/unanswered.
-      return {
-        questionId: q.id,
-        // The attempt field MUST NOT be undefined. Use null if unanswered.
-        attempt: attemptValue !== undefined ? attemptValue : null, 
-        // We'll store the correct answer for reference
-        correctAnswer: q.correctAnswer, 
+      return out;
+    }
+    return value;
+  };
+
+  const handleSubmitTest = async (): Promise<void> => {
+    setIsSubmitted(true);
+    setTimerReady(false);
+
+    if (!selectedTest || !selectedTest.questions?.length) return;
+
+    try {
+      const questionsLength = selectedTest.questions.length;
+
+      // Prepare user answers first
+      const userAnswers = selectedTest.questions.map((q) => {
+        const rawUserAnswer = answers[q.id];
+        const userAnswerValue =
+          typeof rawUserAnswer === "object" && rawUserAnswer && "answer" in rawUserAnswer
+            ? (rawUserAnswer as { answer: string | number }).answer
+            : rawUserAnswer;
+
+        const attemptValue =
+          userAnswerValue !== undefined && userAnswerValue !== null
+            ? String(userAnswerValue)
+            : null;
+
+        return {
+          questionId: q.id,
+          attempt: attemptValue,
+        };
+      });
+
+      // ankush
+      const correct = await getResults();
+      console.log("All answer keys from Firebase:", correct);
+
+      const correctForTest = correct.find(c => c.id === selectedTest.id);
+      console.log("Answer key for this test:", correctForTest);
+
+      let correctCount = 0;
+
+      userAnswers.forEach((ans: any) => {
+        if (correctForTest) {
+          const correctAnswer = (correctForTest as any)[ans.questionId];
+          const userAnswer = Number(ans.attempt);
+
+          console.log(`Question ${ans.questionId}: User answered ${userAnswer}, Correct is ${correctAnswer}`);
+
+          if (correctAnswer !== undefined && Number(correctAnswer) === userAnswer) {
+            correctCount++;
+          }
+        }
+      });
+
+      console.log("Total Correct Count:", correctCount);
+
+      // Use correctCount as the actual score
+      const score = correctCount;
+
+      // Calculate time taken
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const durationMinutes = Number(selectedTest.duration);
+      const totalTestDurationInSeconds = Number.isFinite(durationMinutes)
+        ? durationMinutes * 60
+        : 0;
+
+      const safeRemaining = Number.isFinite(Number(timeRemaining)) ? Number(timeRemaining) : 0;
+      const timeTakenInSeconds = Math.max(0, totalTestDurationInSeconds - safeRemaining);
+
+      const minutes = Math.floor(timeTakenInSeconds / 60);
+      const seconds = timeTakenInSeconds % 60;
+
+      const formattedTime =
+        `${minutes.toString().padStart(2, "0")}:` + `${seconds.toString().padStart(2, "0")}`;
+
+      console.log("User Time Taken:", formattedTime);
+
+      const userId = auth.currentUser?.uid || "guest";
+      const dateCompleted = new Date().toLocaleDateString();
+
+      const percentage =
+        questionsLength > 0 ? Math.round((score / questionsLength) * 100) : 0;
+
+      const newResult: Omit<TestResult, "id"> = {
+        score,
+        timeTaken: timeTakenInSeconds,
+        formattedTime,
+        testId: selectedTest.id ?? null,
+        dateCompleted,
+        userId,
+        userAnswers,
+        totalQuestions: questionsLength,
+        percentage,
       };
-    });
 
-    console.log(" Score calculated:", score);
+      const sanitized = sanitizeForFirestore(newResult);
+      console.log("Final result to save:", sanitized);
 
-    // --- 2. Calculate Time Taken ---
-    const totalTestDurationInSeconds = selectedTest.duration * 60;
-    const timeTakenInSeconds = Math.max(
-      0,
-      totalTestDurationInSeconds - timeRemaining
-    );
-    const minutes = Math.floor(timeTakenInSeconds / 60);
-    const seconds = timeTakenInSeconds % 60;
+      const resultId = await addTestResult(sanitized as any);
+      const resultWithId: TestResult = {
+        id: resultId,
+        ...newResult,
+      };
 
-    const timeTaken = `${minutes.toString().padStart(2, "0")}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
-
-    // --- 3. Prepare Final Result Object (Preventing 'undefined') ---
-
-    // Safely get userId, defaulting to "guest"
-    const userId = auth.currentUser?.uid || "guest";
-    
-    // Safely get dateCompleted string, ensuring it's not undefined.
-    const dateCompleted = new Date().toLocaleDateString() || new Date().toISOString().split('T')[0];
-
-    const newResult: Omit<TestResult, "id"> = {
-      score,
-      timeTaken,
-      testId: selectedTest.id,
-      dateCompleted, // Use the safely generated string
-      userId,
-      userAnswers,
-      totalQuestions: questionsLength,
-      percentage: Math.round((score / questionsLength) * 100),
-      // Ensure any optional fields not shown here are explicitly handled (e.g., set to null if intended to be stored).
-    };
-
-    // --- 4. Save to Firestore via addTestResult ---
-    const resultId = await addTestResult(newResult);
-
-    console.log(" Firebase returned ID:", resultId);
-
-    const resultWithId: TestResult = {
-      id: resultId,
-      ...newResult,
-    };
-
-    console.log("✅ Test result saved successfully:", resultWithId);
-
-    // --- 5. State Updates ---
-    setTestResults((prev) => [...prev, resultWithId]);
-    setCurrentResult(resultWithId);
-    setTestStarted(false);
-    setCurrentView("results");
-
-  } catch (error) {
-    console.error("🔥 Error saving test result:", error);
-    setError("Failed to save test results. Please try again.");
-  }
-};
-
-  const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
+      setTestResults((prev) => [...prev, resultWithId]);
+      setCurrentResult(resultWithId);
+      setTestStarted(false);
+      setCurrentView("results");
+    } catch (error) {
+      console.error("Error saving test results:", error);
+      setError("Failed to save test results. Please try again.");
+    }
+  };
 
   const handleLogout = (): void => setIsLogoutModalVisible(true);
   const cancelLogout = (): void => setIsLogoutModalVisible(false);
@@ -289,6 +331,7 @@ const userAnswerValue =
     setSelectedTest(null);
     setCurrentResult(null);
     setTestStarted(false);
+    setTimerReady(false);
     setCurrentQuestionIndex(0);
     setAnswers({});
     setIsSubmitted(false);
@@ -305,34 +348,59 @@ const userAnswerValue =
     }
   };
 
-  const handleSelectTest = (test: Test): void => {
-    console.log("Selected test:", {
-      id: test.id,
-      title: test.title,
-      questionsCount: test.questions?.length || 0,
-    });
+  const handleSelectTest = async (test: Test): Promise<void> => {
+    try {
+      console.log("Selected test:", test.id);
 
-   
-    if (!test.questions || test.questions.length === 0) {
-      return;
+      const ref = doc(db, "tests", test.id);
+      const snap = await getDoc(ref);
+
+      if (!snap.exists()) {
+        toast.error("Test could not be loaded. Please try again.");
+        return;
+      }
+
+      const freshTest = { id: snap.id, ...(snap.data() as any) };
+
+      if (!Array.isArray(freshTest.questions) || freshTest.questions.length === 0) {
+        toast.error("No questions available for this test.");
+        return;
+      }
+
+      console.log("Loaded questions:", freshTest.questions.length);
+
+      setSelectedTest(freshTest);
+      setCurrentView("instructions");
+      setAnswers({});
+      setCurrentQuestionIndex(0);
+      setCurrentResult(null);
+
+    } catch (error) {
+      console.error("Error selecting test:", error);
+      toast.error("Failed to open test. Check console.");
     }
-
-    setSelectedTest(test);
-    setCurrentView("instructions");
-    setAnswers({});
-    setCurrentQuestionIndex(0);
-    setCurrentResult(null);
   };
 
   const handleStartTest = (): void => {
     if (!selectedTest) return;
 
-   
+    let duration = parseInt(String(selectedTest.duration), 10);
 
-    const durationInSeconds = selectedTest.duration * 60;
-    setCurrentView("test");
-    setTimeRemaining(durationInSeconds);
+    // fallback if invalid
+    if (isNaN(duration) || duration <= 0) {
+      duration = 30;
+    }
+
+    console.log("Final duration used:", duration);
+
+    // set time first
+    setTimeRemaining(duration * 60);
+
+    // tell timer that timeRemaining is ready
+    setTimerReady(true);
+
     setTestStarted(true);
+    setCurrentView("test");
   };
 
   const handleAnswerSelect = (
@@ -343,7 +411,7 @@ const userAnswerValue =
   };
 
   const handleShowResults = (test: Test): void => {
-    console.log("📊 Showing results for test:", test.id);
+    console.log("sssss", test.id);
     const testResult = testResults
       .filter((result) => result.testId === test.id)
       .sort(
@@ -364,7 +432,7 @@ const userAnswerValue =
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
@@ -373,17 +441,18 @@ const userAnswerValue =
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-white text-xl">Redirecting to login...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900">
+    <div className="min-h-screen bg-linear-to-br from-blue-900 via-purple-900 to-indigo-900">
+
       {!isSubmitted && (
         <header className="bg-black/20 backdrop-blur-sm border-b border-white/10">
-         <div className="w-[93%] mx-auto px-4 py-4">
+          <div className="w-[93%] mx-auto px-4 py-4">
 
             <div className="flex flex-row items-center justify-between gap-3">
 
@@ -397,20 +466,19 @@ const userAnswerValue =
                   </button>
                 )}
                 <h1
-                  className={`text-xl sm:text-2xl font-bold text-white ${
-                    currentView !== "dashboard"
-                      ? "cursor-pointer hover:text-blue-300 transition-colors"
-                      : ""
-                  }`}
+                  className={`text-xl sm:text-2xl font-bold text-white ${currentView !== "dashboard"
+                    ? "cursor-pointer hover:text-blue-300 transition-colors"
+                    : ""
+                    }`}
                   onClick={handleHeaderTitleClick}
                 >
                   {currentView === "dashboard"
                     ? "Test Portal"
                     : currentView === "instructions"
-                    ? "Test Instructions"
-                    : currentView === "test"
-                    ? selectedTest?.title || "Test"
-                    : "Test Results"}
+                      ? "Test Instructions"
+                      : currentView === "test"
+                        ? selectedTest?.title || "Test"
+                        : "Test Results"}
                 </h1>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
@@ -434,28 +502,6 @@ const userAnswerValue =
           </div>
         </header>
       )}
-
-      {/* {error && (
-        <div className="max-w-7xl mx-auto px-6 pt-4">
-          <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded-lg">
-            <div className="flex justify-between items-start">
-              <div>
-                <strong>Error:</strong> {error}
-                <br />
-                <small className="text-red-300 mt-1 block">
-                  Check the browser console for more details.
-                </small>
-              </div>
-              <button
-                onClick={() => setError(null)}
-                className="ml-4 text-red-300 hover:text-red-100 text-xl leading-none"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
 
       <main className="overflow-hidden h-82vh mx-auto px-6 py-8">
         {currentView === "dashboard" && (

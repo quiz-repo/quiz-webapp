@@ -377,12 +377,22 @@ body {
 .my-white-select .ant-select-selection-placeholder {
   color: white !important;
   font-size: 16px;
+
 }
+.ant-select {
+  width: 100% !important;
+}
+
+.ant-select-selector {
+  width: 100% !important;
+}
+
 
 .ant-select-dropdown {
   background-color: rgba(255, 255, 255, 0.1) !important;
   backdrop-filter: blur(10px);
   border-radius: 8px !important;
+  
 }
 
 /* Test Mangment Dropdown items */

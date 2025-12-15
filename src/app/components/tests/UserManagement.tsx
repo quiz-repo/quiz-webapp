@@ -5,7 +5,6 @@ import {
   X,
   User,
   Award,
-  TrendingUp,
   FileText,
   Clock,
   CheckCircle,
@@ -66,11 +65,11 @@ const UserManagement: React.FC<UserManagementProps> = ({
   setSelectedUser,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-    console.log("users:", users);
+  console.log("userssssss:", users);
   // console.log("Filtered users:", filteredUsers);
- 
+
   const handleViewDetails = (user: User) => {
-    console.log(setSelectedUser,"ygyyuguyg")
+    console.log(setSelectedUser, "ygyyuguyg")
     setSelectedUser({
       ...user,
       status: user.status ?? "active",
@@ -102,7 +101,6 @@ const UserManagement: React.FC<UserManagementProps> = ({
   return (
     <div className="relative">
       <div className={isModalOpen ? "blur-sm" : ""}>
- 
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
@@ -129,7 +127,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
               <Search className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search users by name or email..."
+                placeholder="Search users by email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-10 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -185,12 +183,10 @@ const UserManagement: React.FC<UserManagementProps> = ({
                     filteredUsers.map((user) => {
                       console.log("USER DETAILS:", user);
 
-                      // Correct Name Logic
                       const fullName =
                         user.displayName ||
-                        `${user.firstName || ""} ${
-                          user.lastName || ""
-                        }`.trim() ||
+                        `${user.firstName || ""} ${user.lastName || ""
+                          }`.trim() ||
                         "N/A";
 
                       return (
@@ -198,23 +194,22 @@ const UserManagement: React.FC<UserManagementProps> = ({
                           key={user.id}
                           className="transition-all duration-200 hover:bg-slate-50"
                         >
-                          {/* NAME + ICON */}
                           <td className="px-6 py-4">
                             <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 overflow-hidden">
-  {users?.[0]?.photoURL ? (
-    <img
-      src={users[0].photoURL}
-      alt={fullName}
-      className="w-full h-full object-cover"
-    />
-  ) : (
-    <span className="text-blue-600 font-semibold text-lg capitalize">
-      {fullName.charAt(0)}
-    </span>
-  )}
-</div>
+                              <div className="flex shrink-0 h-10 w-10">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 overflow-hidden">
+                                  {users?.[0]?.photoURL ? (
+                                    <img
+                                      src={users[0].photoURL}
+                                      alt={fullName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-blue-600 font-semibold text-lg capitalize">
+                                      {fullName.charAt(0)}
+                                    </span>
+                                  )}
+                                </div>
 
                               </div>
 
@@ -277,115 +272,115 @@ const UserManagement: React.FC<UserManagementProps> = ({
       </div>
 
       {/* Modal */}
-{isModalOpen && selectedUser && (
-  <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-xl w-full max-w-xl p-6 shadow-2xl relative">
-      <button
-        onClick={handleCloseModal}
-        className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
-      >
-        <X className="w-5 h-5 cursor-pointer" />
-      </button>
+      {isModalOpen && selectedUser && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-xl p-6 shadow-2xl relative">
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-5 h-5 cursor-pointer" />
+            </button>
 
-      {/* Modal Content */}
-      <div className="bg-white rounded-xl p-6">
+            {/* Modal Content */}
+            <div className="bg-white rounded-xl p-6">
 
-        {/* Header */}
-   <div className="flex flex-col items-center text-center mb-6">
-  <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-full p-1 shadow-lg mb-3">
-    <Avatar
-      src={users?.[0]?.photoURL}
-      icon={!users?.[0]?.photoURL && <User />}
-      size={80}   // <--- Increase size here (60, 70, 80, 100 etc.)
-    />
-  </div>
+              {/* Header */}
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="bg-linear-to-br from-blue-500 to-purple-600 rounded-full p-1 shadow-lg mb-3">
+                  <Avatar
+                    src={users?.[0]?.photoURL}
+                    icon={!users?.[0]?.photoURL && <User />}
+                    size={80}   // <--- Increase size here (60, 70, 80, 100 etc.)
+                  />
+                </div>
 
-  <div>
-    <h2 className="text-2xl font-semibold text-slate-900">
-      {selectedUser.name || selectedUser.displayName}
-    </h2>
-    <p className="text-sm text-slate-500">{selectedUser.email}</p>
-  </div>
-</div>
+                <div>
+                  <h2 className="text-2xl font-semibold text-slate-900">
+                    {selectedUser.name || selectedUser.displayName}
+                  </h2>
+                  <p className="text-sm text-slate-500">{selectedUser.email}</p>
+                </div>
+              </div>
 
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
-            <div className="p-2 bg-blue-100 rounded-full mb-1">
-              <FileText className="w-5 h-5 text-blue-600" />
-            </div>
-            <p className="text-xs text-slate-500 font-medium">Total Tests</p>
-            <p className="text-lg font-bold text-slate-900">
-              {selectedUser.totalTests || 0}
-            </p>
-          </div>
-
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
-            <div className="p-2 bg-green-100 rounded-full mb-1">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-xs text-slate-500 font-medium">Completed</p>
-            <p className="text-lg font-bold text-slate-900">
-              {selectedUser.completedTests || 0}
-            </p>
-          </div>
-
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
-            <div className="p-2 bg-yellow-100 rounded-full mb-1">
-              <Award className="w-5 h-5 text-yellow-600" />
-            </div>
-            <p className="text-xs text-slate-500 font-medium">Avg Score</p>
-            <p className="text-lg font-bold text-slate-900">
-              {selectedUser.avgScore || 0}%
-            </p>
-          </div>
-        </div>
-
-        {/* Test Results */}
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-slate-900 mb-3">
-            Test Results
-          </h3>
-
-          {selectedUser.testResults && selectedUser.testResults.length > 0 ? (
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-
-              {selectedUser.testResults.map((result, index) => (
-                <div
-                  key={index}
-                  className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-slate-100 transition"
-                >
-                  {/* Left side */}
-                  <div className="flex-1 mb-2 md:mb-0">
-                    <p className="text-base font-semibold text-slate-900">
-                      {result.testName}
-                    </p>
-
-                    <p className="text-xs text-slate-500">
-                      Date: {formatDate(result.date)}
-                    </p>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                  <div className="p-2 bg-blue-100 rounded-full mb-1">
+                    <FileText className="w-5 h-5 text-blue-600" />
                   </div>
+                  <p className="text-xs text-slate-500 font-medium">Total Tests</p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {selectedUser.totalTests || 0}
+                  </p>
+                </div>
 
-                  {/* Right side */}
-                  <div className="flex items-center space-x-4">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                  <div className="p-2 bg-green-100 rounded-full mb-1">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">Completed</p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {selectedUser.completedTests || 0}
+                  </p>
+                </div>
 
-                    {/* Score */}
-                    <div className="text-sm text-slate-600 font-medium">
-                      {/* {result.score}/{result.totalQuestions} */}
-                      <span className="text-slate-400 ml-1">
-                        {/* ({result.percentage}%) */}
-                      </span>
-                    </div>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                  <div className="p-2 bg-yellow-100 rounded-full mb-1">
+                    <Award className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">Avg Score</p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {selectedUser.avgScore || 0}%
+                  </p>
+                </div>
+              </div>
 
-                    {/* Duration */}
-                    <div className="flex items-center text-sm text-slate-600">
-                      <Clock className="w-4 h-4 text-slate-400 mr-1" />
-                      {result.duration}
-                    </div>
+              {/* Test Results */}
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-slate-900 mb-3">
+                  Test Results
+                </h3>
 
-                    {/* Pass / Fail */}
-                    {/* <span
+                {selectedUser.testResults && selectedUser.testResults.length > 0 ? (
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+
+                    {selectedUser.testResults.map((result, index) => (
+                      <div
+                        key={index}
+                        className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-slate-100 transition"
+                      >
+                        {/* Left side */}
+                        <div className="flex-1 mb-2 md:mb-0">
+                          <p className="text-base font-semibold text-slate-900">
+                            {result.testName}
+                          </p>
+
+                          <p className="text-xs text-slate-500">
+                            Date: {formatDate(result.date)}
+                          </p>
+                        </div>
+
+                        {/* Right side */}
+                        <div className="flex items-center space-x-4">
+
+                          {/* Score */}
+                          <div className="text-sm text-slate-600 font-medium">
+                            {/* {result.score}/{result.totalQuestions} */}
+                            <span className="text-slate-400 ml-1">
+                              {/* ({result.percentage}%) */}
+                            </span>
+                          </div>
+
+                          {/* Duration */}
+                          <div className="flex items-center text-sm text-slate-600">
+                            <Clock className="w-4 h-4 text-slate-400 mr-1" />
+                            {result.duration}
+                          </div>
+
+                          {/* Pass / Fail */}
+                          {/* <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         result.status === "Pass"
                           ? "bg-green-100 text-green-700"
@@ -394,24 +389,24 @@ const UserManagement: React.FC<UserManagementProps> = ({
                     >
                       {result.status}
                     </span> */}
-                  </div>
-                </div>
-              ))}
+                        </div>
+                      </div>
+                    ))}
 
+                  </div>
+                ) : (
+                  <div className="text-center p-8 bg-slate-50 rounded-xl border border-slate-200">
+                    <BarChart3 className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                    <p className="text-slate-500 text-sm">
+                      No tests completed yet.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="text-center p-8 bg-slate-50 rounded-xl border border-slate-200">
-              <BarChart3 className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-              <p className="text-slate-500 text-sm">
-                No tests completed yet.
-              </p>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
-)}
+      )}
 
     </div>
   );

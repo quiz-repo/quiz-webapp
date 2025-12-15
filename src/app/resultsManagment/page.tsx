@@ -24,7 +24,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { db } from "@/lib/Firebase";
+import { db, getResults } from "@/lib/Firebase";
 
 interface QuestionResult {
   questionId: string;
@@ -83,9 +83,15 @@ interface UserAttemptDetailProps {
   onBack: () => void;
 }
 
-const timeToSeconds = (timeStr: string): number => {
+const timeToSeconds = (timeStr: string | number): number => {
   if (!timeStr) return 0;
 
+  // If it's already a number (seconds), return it
+  if (typeof timeStr === 'number') {
+    return timeStr;
+  }
+
+  // If it's a string, parse it
   const parts = timeStr.split(":")?.map(Number);
 
   if (parts.length === 2) {
@@ -323,11 +329,10 @@ const TestSummaryList: React.FC<{
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span
-                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        parseFloat(summary.testDetails.passRate) >= 50
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-rose-100 text-rose-800"
-                      }`}
+                      className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${parseFloat(summary.testDetails.passRate) >= 50
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-rose-100 text-rose-800"
+                        }`}
                     >
                       {summary.testDetails.passRate}%
                     </span>
@@ -358,6 +363,7 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
   onBack,
 }) => {
   const [allTestResults, setAllTestResults] = useState<TestEntry[]>([]);
+  const [answerKey, setAnswerKey] = useState<any>(null);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -367,6 +373,23 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
 
     fetchResults();
   }, []);
+
+  // Fetch answer keys using getResults (same as dashboard)
+  useEffect(() => {
+    const fetchAnswerKeys = async () => {
+      if (!result?.testId) return;
+
+      const correct = await getResults();
+      console.log("All answer keys from Firebase:", correct);
+
+      const correctForTest = correct.find((c: any) => c.id === result.testId);
+      console.log("Answer key for this test:", correctForTest);
+
+      setAnswerKey(correctForTest);
+    };
+
+    fetchAnswerKeys();
+  }, [result?.testId]);
 
   const detailedResults = result?.userAnswers || [];
   const wrongQuestions = detailedResults.filter((r: any) => !r.isCorrect);
@@ -398,11 +421,10 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
         </div>
 
         <div
-          className={`text-center p-3 rounded-xl font-bold text-xl ${
-            result?.resultStatus === "Pass"
-              ? "bg-emerald-500 text-white"
-              : "bg-rose-500 text-white"
-          }`}
+          className={`text-center p-3 rounded-xl font-bold text-xl ${result?.resultStatus === "Pass"
+            ? "bg-emerald-500 text-white"
+            : "bg-rose-500 text-white"
+            }`}
         >
           {result?.resultStatus ?? "No Status"}
         </div>
@@ -412,16 +434,18 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
         {questions.map((q: any, index: number) => {
           const userQ = detailedResults.find((d: any) => d.questionId === q.id);
           const userAttempt = Number(userQ?.attempt);
-          const isCorrect = userAttempt === q.correctAnswer;
+
+          // Get correct answer from answer key (same as dashboard)
+          const correctAnswer = answerKey ? (answerKey as any)[q.id] : undefined;
+          const isCorrect = correctAnswer !== undefined && Number(userAttempt) === Number(correctAnswer);
 
           return (
             <div
               key={q.id}
-              className={`p-4 rounded-lg shadow-sm border ${
-                isCorrect
-                  ? "border-green-300 bg-green-50"
-                  : "border-red-300 bg-red-50"
-              }`}
+              className={`p-4 rounded-lg shadow-sm border ${isCorrect
+                ? "border-green-300 bg-green-50"
+                : "border-red-300 bg-red-50"
+                }`}
             >
               {/* Question */}
               <h2 className="font-bold text-lg">
@@ -431,7 +455,7 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
               {/* Options */}
               <div className="space-y-3 mt-4">
                 {q.options.map((opt: any, idx: number) => {
-                  const isCorrectOpt = idx === q.correctAnswer;
+                  const isCorrectOpt = correctAnswer !== undefined && idx === Number(correctAnswer);
                   const isUser = idx === userAttempt;
 
                   // User selected correct answer → GREEN strong
@@ -459,7 +483,7 @@ const UserAttemptDetailView: React.FC<UserAttemptDetailProps> = ({
                   }
 
                   // Correct answer (when user selected something else) → GREEN light
-                  if (isCorrectOpt && userAttempt !== q.correctAnswer) {
+                  if (isCorrectOpt && userAttempt !== Number(correctAnswer)) {
                     return (
                       <p
                         key={idx}
@@ -569,7 +593,7 @@ const TestDetailsView: React.FC<{
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-100">
               <tr>
-                  <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-slate-600">
+                <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-slate-600">
                   S.NO
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider min-w-[200px]">
@@ -589,13 +613,12 @@ const TestDetailsView: React.FC<{
                 </th>
               </tr>
             </thead>
-             <tbody className="bg-white divide-y divide-slate-100">
+            <tbody className="bg-white divide-y divide-slate-100">
               {paginatedResults.map((result, index) => (
                 <tr
                   key={result.id}
-                  className={`hover:bg-slate-50 transition duration-150 ${
-                    index % 2 === 0 ? "bg-white" : "bg-slate-50"
-                  }`}
+                  className={`hover:bg-slate-50 transition duration-150 ${index % 2 === 0 ? "bg-white" : "bg-slate-50"
+                    }`}
                 >
                   {/* SNO */}
                   <td className="px-6 py-4 text-sm font-semibold text-slate-800">
@@ -658,7 +681,7 @@ const TestDetailsView: React.FC<{
               )}
             </tbody>
           </table>
-           <div className="p-4 flex justify-end">
+          <div className="p-4 flex justify-end">
             <Pagination
               current={currentPage}
               total={summary.testResults.length}

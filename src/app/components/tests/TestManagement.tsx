@@ -100,7 +100,16 @@ interface TestManagementProps {
   isNavigationModalVisible: boolean;
   setIsNavigationModalVisible: (visible: boolean) => void;
   users?: any;
+  // users?: any;
   handleFileUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  csvData?: Record<string, string>[];
+  setCsvData?: (data: Record<string, string>[]) => void;
+  handleBulkAddQuestions?: (questions: NewQuestion[]) => Promise<void>;
+  pendingQuestions?: NewQuestion[];
+  setPendingQuestions?: (questions: NewQuestion[]) => void;
+  handleUpdateTest?: () => Promise<void>;
+  handleEditTestClick?: (test: Test) => void;
+  isEditingTest?: boolean;
 }
 
 const TestManagement: React.FC<TestManagementProps> = ({
@@ -137,7 +146,16 @@ const TestManagement: React.FC<TestManagementProps> = ({
   setIsNavigationModalVisible,
   users,
   handleFileUpload,
+  csvData = [],
+  setCsvData,
+  handleBulkAddQuestions,
+  pendingQuestions = [],
+  setPendingQuestions,
+  handleUpdateTest,
+  handleEditTestClick,
+  isEditingTest = false,
 }) => {
+  console.log(filteredQuestions, 'dfgfgdfg')
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -156,7 +174,7 @@ const TestManagement: React.FC<TestManagementProps> = ({
             <Plus className="w-5 h-5 mr-2" /> Create Test
           </button>
 
-          <label className="bg-green-600 cursor-pointer hover:bg-green-700 text-white px-5 py-3 rounded-xl font-medium flex items-center transition-colors shadow-lg shadow-green-500/25">
+          {/* <label className="bg-green-600 cursor-pointer hover:bg-green-700 text-white px-5 py-3 rounded-xl font-medium flex items-center transition-colors shadow-lg shadow-green-500/25">
             <Upload className="w-5 h-5 mr-2" />
             Upload CSV
             <input
@@ -165,7 +183,7 @@ const TestManagement: React.FC<TestManagementProps> = ({
               className="hidden"
               accept=".csv"
             />
-          </label>
+          </label> */}
         </div>
       </div>
 
@@ -179,77 +197,93 @@ const TestManagement: React.FC<TestManagementProps> = ({
           </div>
           <div className="p-6">
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {tests.map((test) => (
-                <div
-                  key={test.id}
-                  className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${
-                    selectedTest?.id === test.id
+              {[...tests]
+                .sort((a, b) => {
+                  const dateA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : new Date(a.created).getTime();
+                  const dateB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : new Date(b.created).getTime();
+                  return dateB - dateA;
+                })
+                .map((test) => (
+                  <div
+                    key={test.id}
+                    className={`p-4 rounded-xl cursor-pointer transition-all duration-200 border-2 ${selectedTest?.id === test.id
                       ? "border-blue-200 bg-blue-50 shadow-sm"
                       : "border-slate-100 bg-slate-50 hover:bg-slate-100 hover:border-slate-200"
-                  }`}
-                  onClick={() => setSelectedTest(test)}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                          <FileText className="w-4 h-4 text-white" />
+                      }`}
+                    onClick={() => setSelectedTest(test)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                            <FileText className="w-4 h-4 text-white" />
+                          </div>
+                          <h3 className="font-semibold text-slate-900 truncate">
+                            {test.title}
+                          </h3>
                         </div>
-                        <h3 className="font-semibold text-slate-900 truncate">
-                          {test.title}
-                        </h3>
-                      </div>
-                      <p className="text-sm text-slate-600 ml-11 mb-2">
-                        {test.subject} •{" "}
-                        {Array.isArray(test.questions)
-                          ? test.questions.length
-                          : typeof test.questions === "number"
-                          ? test.questions
-                          : 0}{" "}
-                        questions
-                      </p>
-                      <div className="ml-11 flex items-center space-x-3">
-                        <span className="text-xs text-slate-500">
-                          {test.created}
-                        </span>
-                        <span
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
-                            test.status?.toLowerCase() === "active"
+                        <p className="text-sm text-slate-600 ml-11 mb-2">
+                          {test.subject} •{" "}
+                          {Array.isArray(test.questions)
+                            ? test.questions.length
+                            : typeof test.questions === "number"
+                              ? test.questions
+                              : 0}{" "}
+                          questions
+                        </p>
+                        <div className="ml-11 flex items-center space-x-3">
+                          <span className="text-xs text-slate-500">
+                            {test.created}
+                          </span>
+                          <span
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold ${test.status?.toLowerCase() === "active"
                               ? "bg-emerald-100 text-emerald-800"
                               : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {test.status.charAt(0).toUpperCase() +
-                            test.status.slice(1).toLowerCase()}
-                        </span>
-                        {/* <button
+                              }`}
+                          >
+                            {test.status.charAt(0).toUpperCase() +
+                              test.status.slice(1).toLowerCase()}
+                          </span>
+                          {/* <button
                           className="px-3 cursor-pointer py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition"
                           onClick={() => setAnalysisTestId(test.id)}
                         >
                           Analyse
                         </button> */}
-                        {/* {analysisTestId && (
+                          {/* {analysisTestId && (
                           <TestAnalysis
                             testId={analysisTestId}
                             onClose={() => setAnalysisTestId(null)}
                           />
                         )} */}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTestClick?.(test);
+                          }}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit Test"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPendingDeleteTestId(test.id);
+                            setIsNavigationModalVisible(true);
+                          }}
+                          disabled={loading}
+                          className="text-red-400 cursor-pointer hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPendingDeleteTestId(test.id);
-                        setIsNavigationModalVisible(true);
-                      }}
-                      disabled={loading}
-                      className="text-red-400 cursor-pointer hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
@@ -315,11 +349,10 @@ const TestManagement: React.FC<TestManagementProps> = ({
                       {question.options?.map((option, optIndex) => (
                         <div
                           key={optIndex}
-                          className={`text-xs p-3 rounded-lg border transition-all ${
-                            optIndex === question.correctAnswer
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                              : "bg-white text-slate-600 border-slate-200"
-                          }`}
+                          className={`text-xs p-3 rounded-lg border transition-all ${optIndex === question.correctAnswer
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : "bg-white text-slate-600 border-slate-200"
+                            }`}
                         >
                           <span className="font-semibold">
                             {String.fromCharCode(65 + optIndex)}.
@@ -341,8 +374,8 @@ const TestManagement: React.FC<TestManagementProps> = ({
           <div className="bg-white rounded-xl p-6 shadow-xl w-full max-w-xl h-[90vh] flex flex-col">
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-slate-900">
-                Create New Test
+              <h2 className="text-2xl font-bold text-slate-800">
+                {isEditingTest ? "Edit Test" : "Create New Test"}
               </h2>
               <button
                 onClick={onClose}
@@ -501,23 +534,43 @@ const TestManagement: React.FC<TestManagementProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="mt-5 flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-slate-700 bg-slate-100 rounded-md hover:bg-slate-200 transition-colors border border-slate-200"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleAddTest}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                Create Test
-              </button>
+            <div className="mt-5 flex justify-between items-center">
+              <div className="text-sm text-slate-500">
+                {pendingQuestions.length > 0 && (
+                  <span className="text-emerald-600 font-medium flex items-center">
+                    <FileText className="w-4 h-4 mr-1" /> {pendingQuestions.length} questions attached
+                  </span>
+                )}
+              </div>
+              <div className="flex space-x-3">
+                <label className="bg-green-600 cursor-pointer hover:bg-green-700 text-white px-5 py-3 rounded-xl font-medium flex items-center transition-colors shadow-lg shadow-green-500/25">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload CSV
+                  <input
+                    type="file"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept=".csv"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className=" cursor-pointer px-4 py-2 text-slate-700 bg-slate-100 rounded-md hover:bg-slate-200 transition-colors border border-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={isEditingTest && handleUpdateTest ? handleUpdateTest : handleAddTest}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {isEditingTest ? "Update Test" : "Create Test"}
+                </button>
+              </div>
             </div>
+
           </div>
         </div>
       )}
@@ -705,6 +758,145 @@ const TestManagement: React.FC<TestManagementProps> = ({
                      hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {csvData.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-8 shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">
+                Preview CSV Import
+              </h2>
+              <button
+                onClick={() => setCsvData?.([])}
+                className="text-slate-400 hover:text-slate-600 transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-auto border rounded-xl">
+              <table className="w-full text-sm text-left text-slate-600">
+                <thead className="bg-slate-50 text-xs uppercase font-medium text-slate-500 sticky top-0">
+                  <tr>
+                    <th className="px-6 py-4">Question</th>
+                    <th className="px-6 py-4">Option A</th>
+                    <th className="px-6 py-4">Option B</th>
+                    <th className="px-6 py-4">Option C</th>
+                    <th className="px-6 py-4">Option D</th>
+                    <th className="px-6 py-4">Correct Answer</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {csvData.map((row, index) => {
+                    // Helper to map row to clean data
+                    const processRow = (r: any) => {
+                      // Attempt to match keys more aggressively, especially uppercase with spaces
+                      const q = r.QUESTION || r.Question || r.question || r['Question Text'] || (Object.values(r)[0] as string) || "";
+
+                      const o1 = r['OPTION A'] || r['Option A'] || r.OptionA || r.option1 || r.Option1 || r['Option 1'] || r.A || r.a || "";
+                      const o2 = r['OPTION B'] || r['Option B'] || r.OptionB || r.option2 || r.Option2 || r['Option 2'] || r.B || r.b || "";
+                      const o3 = r['OPTION C'] || r['Option C'] || r.OptionC || r.option3 || r.Option3 || r['Option 3'] || r.C || r.c || "";
+                      const o4 = r['OPTION D'] || r['Option D'] || r.OptionD || r.option4 || r.Option4 || r['Option 4'] || r.D || r.d || "";
+
+                      let ans = 0;
+                      const rawAns = r['CORRECT ANSWER'] || r['Correct Answer'] || r.correctAnswer || r.CorrectAnswer || r.answer || r.Answer || r.ANSWER;
+
+                      if (rawAns !== undefined && rawAns !== null) {
+                        const s = String(rawAns).trim().toUpperCase();
+                        if (['A', '1', 'OPTION A'].some(x => s === x || s.endsWith(x))) ans = 0;
+                        else if (['B', '2', 'OPTION B'].some(x => s === x || s.endsWith(x))) ans = 1;
+                        else if (['C', '3', 'OPTION C'].some(x => s === x || s.endsWith(x))) ans = 2;
+                        else if (['D', '4', 'OPTION D'].some(x => s === x || s.endsWith(x))) ans = 3;
+                        else {
+                          const n = Number(rawAns);
+                          if (!isNaN(n)) ans = n;
+                        }
+                      }
+                      return { q, options: [o1, o2, o3, o4], ans };
+                    };
+
+                    const { q, options, ans } = processRow(row);
+
+                    return (
+                      <tr key={index} className="hover:bg-slate-50">
+                        <td className="px-6 py-4 font-medium text-slate-900 line-clamp-2">{q}</td>
+                        <td className="px-6 py-4">{options[0]}</td>
+                        <td className="px-6 py-4">{options[1]}</td>
+                        <td className="px-6 py-4">{options[2]}</td>
+                        <td className="px-6 py-4">{options[3]}</td>
+                        <td className="px-6 py-4 font-medium text-emerald-600">
+                          {['A', 'B', 'C', 'D'][ans] || ans}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-8 flex justify-end space-x-4">
+              <button
+                onClick={() => setCsvData?.([])}
+                className="px-5 py-2.5 cursor-pointer bg-slate-100 text-slate-700 
+                     rounded-xl hover:bg-slate-200 transition-colors border border-slate-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (handleBulkAddQuestions) {
+                    const formattedQuestions: NewQuestion[] = csvData.map(row => {
+                      const q = row.QUESTION || row.Question || row.question || row['Question Text'] || (Object.values(row)[0] as string) || "";
+
+                      const o1 = row['OPTION A'] || row['Option A'] || row.OptionA || row.option1 || row.Option1 || row['Option 1'] || row.A || row.a || "";
+                      const o2 = row['OPTION B'] || row['Option B'] || row.OptionB || row.option2 || row.Option2 || row['Option 2'] || row.B || row.b || "";
+                      const o3 = row['OPTION C'] || row['Option C'] || row.OptionC || row.option3 || row.Option3 || row['Option 3'] || row.C || row.c || "";
+                      const o4 = row['OPTION D'] || row['Option D'] || row.OptionD || row.option4 || row.Option4 || row['Option 4'] || row.D || row.d || "";
+
+                      let ans = 0;
+                      const rawAns = row['CORRECT ANSWER'] || row['Correct Answer'] || row.correctAnswer || row.CorrectAnswer || row.answer || row.Answer || row.ANSWER;
+
+                      if (rawAns !== undefined && rawAns !== null) {
+                        const s = String(rawAns).trim().toUpperCase();
+                        if (['A', '1', 'OPTION A'].some(x => s === x || s.endsWith(x))) ans = 0;
+                        else if (['B', '2', 'OPTION B'].some(x => s === x || s.endsWith(x))) ans = 1;
+                        else if (['C', '3', 'OPTION C'].some(x => s === x || s.endsWith(x))) ans = 2;
+                        else if (['D', '4', 'OPTION D'].some(x => s === x || s.endsWith(x))) ans = 3;
+                        else {
+                          const n = Number(rawAns);
+                          if (!isNaN(n)) ans = n;
+                        }
+                      }
+
+                      return {
+                        question: q,
+                        options: [o1, o2, o3, o4],
+                        correctAnswer: ans,
+                        type: "multiple-choice" as const
+                      };
+                    }).filter(q => q.question);
+
+                    if (showAddTest && setPendingQuestions) {
+                      // We are in "Create Test" mode
+                      setPendingQuestions(formattedQuestions);
+                      setCsvData?.([]);
+                      // toast.success("Questions attached!"); // Toast might be behind modal?
+                    } else if (handleBulkAddQuestions) {
+                      // We are in "Test Management" mode (adding to existing test)
+                      handleBulkAddQuestions(formattedQuestions);
+                    }
+                  }
+                }}
+                disabled={loading}
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-xl 
+                     hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                Confirm Import ({csvData.length})
               </button>
             </div>
           </div>

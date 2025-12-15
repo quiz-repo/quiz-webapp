@@ -37,11 +37,11 @@ const TestAnalysis: React.FC<TestAnalysisProps> = ({ testId, onClose }) => {
         try {
           total = await getTotalUsers(); // Will return 0 if non-admin
         } catch (err) {
-          console.warn("Could not fetch total users:", err);
+     
         }
         setTotalUsers(total);
       } catch (err) {
-        console.error("Error fetching test analysis:", err);
+
         setAttempts(0);
         setAvgScore(0);
         setTotalUsers(0);
